@@ -510,14 +510,16 @@ a:focus-visible {
   font-weight: 700;
 }
 
-.vehicle-card__icon {
+.vehicle-card__image {
   position: relative;
   z-index: 1;
-  width: min(62%, 148px);
-  height: auto;
-  overflow: visible;
-  fill: #41618e;
-  opacity: 0.82;
+  display: block;
+  width: 100%;
+  height: 124px;
+  object-fit: contain;
+  object-position: center;
+  padding: 6px 8px;
+  background: #eef2f6;
 }
 
 .vehicle-card__lot {
