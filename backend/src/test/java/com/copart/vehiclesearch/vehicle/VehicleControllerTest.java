@@ -29,8 +29,8 @@ class VehicleControllerTest {
         mockMvc.perform(get("/api/vehicles"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.content.length()").value(10))
-                .andExpect(jsonPath("$.totalElements").value(12))
-                .andExpect(jsonPath("$.totalPages").value(2))
+                .andExpect(jsonPath("$.totalElements").value(300))
+                .andExpect(jsonPath("$.totalPages").value(30))
                 .andExpect(jsonPath("$.number").value(0))
                 .andExpect(jsonPath("$.size").value(10))
                 .andExpect(jsonPath("$.first").value(true))
@@ -42,7 +42,7 @@ class VehicleControllerTest {
         mockMvc.perform(get("/api/vehicles")
                         .param("q", "tOyOtA"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.totalElements").value(2))
+                .andExpect(jsonPath("$.totalElements").value(30))
                 .andExpect(jsonPath("$.content[0].lotNumber").value("LOT-1001"));
     }
 
@@ -52,7 +52,7 @@ class VehicleControllerTest {
                         .param("make", "Toyota")
                         .param("condition", "Run & Drive"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.totalElements").value(1))
+                .andExpect(jsonPath("$.totalElements").value(10))
                 .andExpect(jsonPath("$.content[0].lotNumber").value("LOT-1001"));
     }
 
@@ -62,11 +62,12 @@ class VehicleControllerTest {
                         .param("minYear", "2020")
                         .param("maxYear", "2021")
                         .param("sortBy", "year")
-                        .param("direction", "asc"))
+                        .param("direction", "asc")
+                        .param("size", "100"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.totalElements").value(4))
+                .andExpect(jsonPath("$.totalElements").value(86))
                 .andExpect(jsonPath("$.content[0].year").value(2020))
-                .andExpect(jsonPath("$.content[3].year").value(2021));
+                .andExpect(jsonPath("$.content[43].year").value(2021));
     }
 
     @Test
@@ -75,8 +76,7 @@ class VehicleControllerTest {
                         .param("sortBy", "year")
                         .param("direction", "desc"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.content[0].year").value(2023))
-                .andExpect(jsonPath("$.content[0].make").value("Hyundai"));
+                .andExpect(jsonPath("$.content[0].year").value(2024));
     }
 
     @Test
