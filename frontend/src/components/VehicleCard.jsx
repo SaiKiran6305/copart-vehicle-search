@@ -1,3 +1,5 @@
+import vehicleImages from "../data/vehicleImages.js";
+
 const currency = new Intl.NumberFormat("en-US", {
   style: "currency",
   currency: "USD",
@@ -17,18 +19,18 @@ function formatDate(value) {
 }
 
 export default function VehicleCard({ vehicle }) {
+  const image = vehicleImages[vehicle.make] || vehicleImages.default;
+
   return (
     <article className="vehicle-card" aria-label={`${vehicle.year} ${vehicle.make} ${vehicle.model}`}>
-      <div className="vehicle-card__visual" aria-hidden="true">
+      <div className="vehicle-card__visual">
+        <img
+          className="vehicle-card__image"
+          src={image}
+          alt=""
+          aria-hidden="true"
+        />
         <span className="vehicle-card__visual-year">{vehicle.year}</span>
-        <svg
-          className="vehicle-card__icon"
-          viewBox="0 0 160 80"
-          role="presentation"
-          focusable="false"
-        >
-          <path d="M24 48h9l9-21c2-5 6-8 12-8h48c5 0 9 2 12 7l13 22h8c5 0 9 4 9 9v9h-14a13 13 0 0 0-25 0H60a13 13 0 0 0-25 0H22v-9c0-5 1-9 2-9Zm25-20-8 19h76l-11-18c-1-2-3-3-6-3H54c-2 0-4 1-5 2ZM47 71a7 7 0 1 1 0-14 7 7 0 0 1 0 14Zm80 0a7 7 0 1 1 0-14 7 7 0 0 1 0 14Z" />
-        </svg>
         <span className="vehicle-card__lot">{vehicle.lotNumber}</span>
       </div>
 
