@@ -1,4 +1,6 @@
-# Copart Vehicle Search Prototype
+# copart-vehicle-search
+
+## Copart Vehicle Search Prototype
 
 A vehicle-search prototype for a Software Engineering Intern take-home assignment. It exposes a paginated REST API over synthetic vehicle auction records. No real Copart data is used.
 
