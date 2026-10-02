@@ -26,7 +26,7 @@ import java.time.LocalDate;
         @Index(name = "idx_vehicle_year", columnList = "model_year"),
         @Index(name = "idx_vehicle_condition", columnList = "condition")
 })
-@Check(constraints = "model_year BETWEEN 1886 AND 2100 AND odometer >= 0 AND estimated_value >= 0")
+@Check(constraints = "model_year BETWEEN 1990 AND 2027 AND odometer >= 0 AND estimated_value >= 0")
 public class Vehicle {
 
     @Id
