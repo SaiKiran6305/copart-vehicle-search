@@ -6,39 +6,64 @@ A vehicle-search prototype for a Software Engineering Intern take-home assignmen
 
 ## Technology
 
-- Java 17 and Spring Boot
+- Backend: Java 17 and Spring Boot
 - Spring Web, Spring Data JPA, and Hibernate
 - H2 for local development and tests
 - Maven
 - JUnit 5 and MockMvc
+- Frontend: React, JavaScript, Vite, HTML5, and CSS3
 
-The current implementation is Phase 1 (backend foundation). A React frontend and single-deployment static asset setup are intentionally not included yet.
+Phase 1 (backend foundation) and Phase 2 (React search interface) are implemented. Phase 3 deployment integration is not included yet.
 
 ## Local setup
 
-Requirements: Java 17 and Maven.
+Requirements: Java 17, Maven, and Node.js/npm.
 
-From the repository root:
+Start the backend from the repository root:
 
 ```sh
 cd backend
 mvn spring-boot:run
 ```
 
-The API is available at `http://localhost:8080`. The backend seeds 12 fictional vehicles when the database has no records.
+The API is available at `http://localhost:8080`. When the database is empty, the backend seeds 300 synthetic vehicle records from `backend/src/main/resources/vehicles.json`. In another terminal, start the React development server:
+
+```sh
+cd frontend
+npm install
+npm run dev
+```
+
+Open the local URL printed by Vite. Its development proxy forwards `/api` requests to `http://localhost:8080`.
 
 Run the backend tests with:
 
 ```sh
-cd backend
-mvn test
+cd backend && mvn test
 ```
+
+Build the frontend for production with:
+
+```sh
+cd frontend
+npm run build
+```
+
+The output is generated in `frontend/dist`. Phase 3 will configure Spring Boot to serve those static assets.
+
+## Frontend
+
+The responsive search interface uses the backend API for all vehicle data. It includes free-text search, make/model/condition and year filters, allowlisted sorting and direction, configurable page size, paginated card results, and loading, validation, error, and empty-result states. Vehicle cards adapt from four columns on desktop to two on tablet and one on mobile.
+
+The frontend is intentionally a separate Vite app for local development; it does not yet bundle into or deploy with the Spring Boot application.
 
 ## Database
 
 Local development uses a persistent file-based H2 database at `jdbc:h2:file:./data/copartdb`, with username `sa` and an empty password. The database files are stored under `backend/data` when started from the backend directory. Hibernate updates the local schema.
 
 Tests override this configuration to use an in-memory H2 database and recreate its schema for each test run.
+
+The supplied dataset is packaged at `backend/src/main/resources/vehicles.json` so it is included in backend builds. Seeding is skipped whenever the database already contains vehicles. If you already ran an earlier version with the 12-record seed, its persistent database will keep those records; back up and reset that local database before starting if you want the new 300-record dataset loaded. Tests use a fresh in-memory database and verify the 300-record seed.
 
 ## API
 
@@ -82,7 +107,7 @@ The response includes the current page's `content` and pagination metadata such 
 - Make, model, and condition filters use exact matching (case-insensitive); only `q` is partial matching.
 - Search is implemented with database predicates and pagination rather than loading all records into application memory.
 - H2 and Hibernate schema auto-update are for this local prototype, not production deployment.
-- Authentication, authorization, frontend integration, production database migrations, and advanced/fuzzy search are out of scope for Phase 1.
+- Authentication, authorization, production database migrations, and advanced/fuzzy search are out of scope for this prototype. Serving the React build from Spring Boot is planned for Phase 3.
 
 ## Architecture and future deployment
 
