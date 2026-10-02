@@ -1,6 +1,5 @@
 package com.copart.vehiclesearch.vehicle;
 
-import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
@@ -26,7 +25,7 @@ public class VehicleController {
     }
 
     @GetMapping
-    public ResponseEntity<Page<VehicleResponse>> search(
+    public ResponseEntity<VehicleSearchResponse> search(
             @RequestParam(required = false) String q,
             @RequestParam(required = false) String make,
             @RequestParam(required = false) String model,
@@ -45,12 +44,16 @@ public class VehicleController {
             return ResponseEntity.badRequest().build();
         }
 
-        String safeSortBy = SORTABLE_FIELDS.contains(sortBy) ? sortBy : "saleDate";
+        if (!SORTABLE_FIELDS.contains(sortBy)
+                || !("asc".equalsIgnoreCase(direction) || "desc".equalsIgnoreCase(direction))) {
+            return ResponseEntity.badRequest().build();
+        }
+
         Sort.Direction sortDirection = "desc".equalsIgnoreCase(direction)
                 ? Sort.Direction.DESC : Sort.Direction.ASC;
-        Pageable pageable = PageRequest.of(page, size, Sort.by(sortDirection, safeSortBy));
+        Pageable pageable = PageRequest.of(page, size, Sort.by(sortDirection, sortBy));
 
-        return ResponseEntity.ok(vehicleService.search(
-                q, make, model, condition, minYear, maxYear, pageable));
+        return ResponseEntity.ok(VehicleSearchResponse.from(vehicleService.search(
+                q, make, model, condition, minYear, maxYear, pageable)));
     }
 }
