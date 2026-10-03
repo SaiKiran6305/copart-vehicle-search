@@ -124,6 +124,21 @@ export default function App() {
 
     if (!hasSearchFilters && hadSubmittedSearch) {
       setCriteria({ ...initialCriteria });
+    } else if (["make", "model", "condition", "priceRange"].includes(name)) {
+      const [minPrice, maxPrice] = nextFilters.priceRange
+        ? nextFilters.priceRange.split("-").map(Number)
+        : [undefined, undefined];
+
+      setCriteria((current) => ({
+        ...current,
+        make: nextFilters.make,
+        model: nextFilters.model,
+        condition: nextFilters.condition,
+        priceRange: nextFilters.priceRange,
+        minPrice,
+        maxPrice,
+        page: 0,
+      }));
     }
   };
 
