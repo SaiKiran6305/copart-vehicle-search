@@ -28,11 +28,11 @@ class VehicleControllerTest {
     void returnsDefaultPaginatedVehicles() throws Exception {
         mockMvc.perform(get("/api/vehicles"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.content.length()").value(10))
+                .andExpect(jsonPath("$.content.length()").value(12))
                 .andExpect(jsonPath("$.totalElements").value(300))
-                .andExpect(jsonPath("$.totalPages").value(30))
+                .andExpect(jsonPath("$.totalPages").value(25))
                 .andExpect(jsonPath("$.number").value(0))
-                .andExpect(jsonPath("$.size").value(10))
+                .andExpect(jsonPath("$.size").value(12))
                 .andExpect(jsonPath("$.first").value(true))
                 .andExpect(jsonPath("$.last").value(false));
     }

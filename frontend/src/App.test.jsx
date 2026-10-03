@@ -19,7 +19,7 @@ function makeVehicle(make = "Toyota", model = "Camry", id = 1) {
   };
 }
 
-function makePage({ totalElements = 300, page = 0, size = 10, vehicle = makeVehicle() } = {}) {
+function makePage({ totalElements = 300, page = 0, size = 12, vehicle = makeVehicle() } = {}) {
   const totalPages = Math.ceil(totalElements / size);
   return {
     content: totalElements === 0 ? [] : [vehicle],
@@ -37,7 +37,7 @@ function mockSearchApi() {
     const params = new URL(url, window.location.origin).searchParams;
     const query = params.get("q") || "";
     const page = Number(params.get("page") || 0);
-    const size = Number(params.get("size") || 10);
+    const size = Number(params.get("size") || 12);
 
     if (query.toLowerCase() === "hondaxyz") {
       return { ok: true, json: async () => makePage({ totalElements: 0, page, size }) };
@@ -75,6 +75,11 @@ describe("vehicle search interactions", () => {
     render(<App />);
 
     expect(await screen.findByRole("heading", { name: "300 vehicles" })).toBeInTheDocument();
+    expect(screen.getByLabelText("Per page")).toHaveValue("12");
+    expect(global.fetch).toHaveBeenLastCalledWith(
+      expect.stringContaining("size=12"),
+      expect.any(Object),
+    );
     await user.click(screen.getByRole("button", { name: /go to next page/i }));
 
     await waitFor(() => {
@@ -83,7 +88,7 @@ describe("vehicle search interactions", () => {
         expect.any(Object),
       );
     });
-    expect(await screen.findByRole("navigation", { name: "Vehicle result pages" })).toHaveTextContent("Page 2 of 30");
+    expect(await screen.findByRole("navigation", { name: "Vehicle result pages" })).toHaveTextContent("Page 2 of 25");
   });
 
   it("updates available models when the make changes", async () => {

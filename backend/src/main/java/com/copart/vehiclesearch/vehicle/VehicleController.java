@@ -36,7 +36,7 @@ public class VehicleController {
             @RequestParam(required = false) BigDecimal minPrice,
             @RequestParam(required = false) BigDecimal maxPrice,
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "12") int size,
             @RequestParam(defaultValue = "saleDate") String sortBy,
             @RequestParam(defaultValue = "asc") String direction) {
 

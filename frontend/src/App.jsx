@@ -13,13 +13,13 @@ const initialFilters = {
   priceRange: "",
   sortBy: "saleDate",
   direction: "asc",
-  size: "10",
+  size: "12",
 };
 
 const initialCriteria = {
   ...initialFilters,
   page: 0,
-  size: 10,
+  size: 12,
 };
 
 const emptyResult = {
