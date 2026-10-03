@@ -1,37 +1,48 @@
-const sortOptions = [
-  ["saleDate", "Sale date"],
-  ["year", "Year"],
-  ["make", "Make"],
-  ["model", "Model"],
-  ["estimatedValue", "Estimated value"],
-  ["odometer", "Odometer"],
-];
+const modelsByMake = {
+  BMW: ["3 Series", "5 Series", "X3"],
+  Chevrolet: ["Equinox", "Malibu", "Silverado"],
+  Ford: ["Escape", "F-150", "Mustang"],
+  Honda: ["Accord", "CR-V", "Civic"],
+  Hyundai: ["Elantra", "Santa Fe", "Tucson"],
+  Jeep: ["Cherokee", "Compass", "Wrangler"],
+  Kia: ["Forte", "Sorento", "Sportage"],
+  Nissan: ["Altima", "Rogue", "Sentra"],
+  Tesla: ["Model 3", "Model S", "Model Y"],
+  Toyota: ["Camry", "Corolla", "RAV4"],
+};
 
 export default function FilterPanel({ filters, onChange }) {
   return (
     <div className="filter-grid">
       <label className="form-control" htmlFor="make">
         <span>Make</span>
-        <input
+        <select
           id="make"
           name="make"
-          type="text"
-          placeholder="Any make"
           value={filters.make}
           onChange={onChange}
-        />
+        >
+          <option value="">Any make</option>
+          {Object.keys(modelsByMake).map((make) => (
+            <option key={make} value={make}>{make}</option>
+          ))}
+        </select>
       </label>
 
       <label className="form-control" htmlFor="model">
         <span>Model</span>
-        <input
+        <select
           id="model"
           name="model"
-          type="text"
-          placeholder="Any model"
           value={filters.model}
           onChange={onChange}
-        />
+          disabled={!filters.make}
+        >
+          <option value="">{filters.make ? "Any model" : "Choose a make first"}</option>
+          {(modelsByMake[filters.make] || []).map((model) => (
+            <option key={model} value={model}>{model}</option>
+          ))}
+        </select>
       </label>
 
       <label className="form-control" htmlFor="condition">
@@ -82,40 +93,6 @@ export default function FilterPanel({ filters, onChange }) {
         />
       </fieldset>
 
-      <label className="form-control" htmlFor="sortBy">
-        <span>Sort by</span>
-        <select id="sortBy" name="sortBy" value={filters.sortBy} onChange={onChange}>
-          {sortOptions.map(([value, label]) => (
-            <option key={value} value={value}>
-              {label}
-            </option>
-          ))}
-        </select>
-      </label>
-
-      <label className="form-control" htmlFor="direction">
-        <span>Direction</span>
-        <select
-          id="direction"
-          name="direction"
-          value={filters.direction}
-          onChange={onChange}
-        >
-          <option value="asc">Ascending</option>
-          <option value="desc">Descending</option>
-        </select>
-      </label>
-
-      <label className="form-control form-control--compact" htmlFor="size">
-        <span>Per page</span>
-        <select id="size" name="size" value={filters.size} onChange={onChange}>
-          <option value="5">5</option>
-          <option value="10">10</option>
-          <option value="20">20</option>
-          <option value="50">50</option>
-          <option value="100">100</option>
-        </select>
-      </label>
     </div>
   );
 }

@@ -13,9 +13,9 @@ A vehicle-search prototype for a Software Engineering Intern take-home assignmen
 - JUnit 5 and MockMvc
 - Frontend: React, JavaScript, Vite, HTML5, and CSS3
 
-Phase 1 (backend foundation) and Phase 2 (React search interface) are implemented. Phase 3 deployment integration is not included yet.
+The React interface and Spring Boot API are packaged together for local development and container deployment.
 
-## Local setup
+## Local development
 
 Requirements: Java 17, Maven, and Node.js/npm.
 
@@ -26,7 +26,7 @@ cd backend
 mvn spring-boot:run
 ```
 
-The API is available at `http://localhost:8080`. When the database is empty, the backend seeds 300 synthetic vehicle records from `backend/src/main/resources/vehicles.json`. In another terminal, start the React development server:
+The backend listens on port 8080 during local development. When the database is empty, it seeds 300 synthetic vehicle records from `backend/src/main/resources/vehicles.json`. In another terminal, start the React development server:
 
 ```sh
 cd frontend
@@ -34,7 +34,7 @@ npm install
 npm run dev
 ```
 
-Open the local URL printed by Vite. Its development proxy forwards `/api` requests to `http://localhost:8080`.
+Open the development address printed by Vite. Vite forwards `/api` requests to the Spring Boot server on port 8080. The browser uses relative `/api` requests locally and when hosted.
 
 Run the backend tests with:
 
@@ -42,20 +42,26 @@ Run the backend tests with:
 cd backend && mvn test
 ```
 
-Build the frontend for production with:
+Build the frontend with:
 
 ```sh
 cd frontend
 npm run build
 ```
 
-The output is generated in `frontend/dist`. Phase 3 will configure Spring Boot to serve those static assets.
+The output is generated in `frontend/dist`.
+
+## Railway deployment
+
+The repository-root `Dockerfile` builds the React app, copies the production files into Spring Boot's static resources, and packages the frontend and API into one runnable image. Railway can detect and build this root `Dockerfile`; the application listens on Railway's `PORT` environment variable.
+
+After connecting the GitHub repository to a Railway service, use the repository root as the source directory and the root `Dockerfile` for the build. Once the service deploys, generate a public domain in the service's Networking settings. Railway provides the public URL; no production URL is available in this repository before that deployment.
 
 ## Frontend
 
-The responsive search interface uses the backend API for all vehicle data. It includes free-text search, make/model/condition and year filters, allowlisted sorting and direction, configurable page size, paginated card results, and loading, validation, error, and empty-result states. Vehicle cards adapt from four columns on desktop to two on tablet and one on mobile.
+The responsive search interface uses the backend API for vehicle data. It includes free-text search, make/model/condition and year filters, combined sort choices, configurable page size, paginated card results, and loading, validation, error, and empty-result states. Make and model options are linked. Saved vehicle hearts persist in local storage and sync across tabs in the same browser profile; they are not shared between separate profiles or devices. Vehicle cards use four columns on wide screens, three on smaller desktop widths, two on tablets, and one on narrow phones.
 
-The frontend is intentionally a separate Vite app for local development; it does not yet bundle into or deploy with the Spring Boot application.
+The frontend is a Vite app for local development and is bundled into the Spring Boot application by the root Dockerfile for deployment.
 
 ## Database
 
@@ -106,12 +112,12 @@ The response includes the current page's `content` and pagination metadata such 
 - Seeded records are fictional and are inserted only when the database is empty.
 - Make, model, and condition filters use exact matching (case-insensitive); only `q` is partial matching.
 - Search is implemented with database predicates and pagination rather than loading all records into application memory.
-- H2 and Hibernate schema auto-update are for this local prototype, not production deployment.
-- Authentication, authorization, production database migrations, and advanced/fuzzy search are out of scope for this prototype. Serving the React build from Spring Boot is planned for Phase 3.
+- H2 and Hibernate schema auto-update are intended for this prototype; a persistent database should be used for production data.
+- Authentication, authorization, production database migrations, and advanced/fuzzy search are out of scope for this prototype.
 
-## Architecture and future deployment
+## Architecture
 
-The backend is organized into controller, service, repository, entity, response DTO, and search specification layers. The intended later single-deployment layout is:
+The backend is organized into controller, service, repository, entity, response DTO, and search specification layers. The container serves the React app and API from the same Spring Boot application:
 
 ```text
 Browser

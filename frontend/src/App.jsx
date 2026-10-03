@@ -31,6 +31,17 @@ const emptyResult = {
   last: true,
 };
 
+const savedVehiclesKey = "copart:saved-vehicle-ids:v1";
+
+function readSavedVehicleIds() {
+  try {
+    const saved = JSON.parse(window.localStorage.getItem(savedVehiclesKey) || "[]");
+    return Array.isArray(saved) ? saved : [];
+  } catch {
+    return [];
+  }
+}
+
 export default function App() {
   const [filters, setFilters] = useState(initialFilters);
   const [criteria, setCriteria] = useState(initialCriteria);
@@ -39,6 +50,37 @@ export default function App() {
   const [error, setError] = useState("");
   const [validationError, setValidationError] = useState("");
   const [requestVersion, setRequestVersion] = useState(0);
+  const [favoriteIds, setFavoriteIds] = useState(readSavedVehicleIds);
+  const [showStickySearch, setShowStickySearch] = useState(false);
+
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(savedVehiclesKey, JSON.stringify(favoriteIds));
+    } catch {
+      // Keep favorites usable for the current session when storage is unavailable.
+    }
+  }, [favoriteIds]);
+
+  useEffect(() => {
+    const syncFavorites = (event) => {
+      if (event.key !== savedVehiclesKey && event.key !== null) return;
+      try {
+        const saved = JSON.parse(event.newValue || "[]");
+        setFavoriteIds(Array.isArray(saved) ? saved : []);
+      } catch {
+        setFavoriteIds([]);
+      }
+    };
+    window.addEventListener("storage", syncFavorites);
+    return () => window.removeEventListener("storage", syncFavorites);
+  }, []);
+
+  useEffect(() => {
+    const updateStickySearch = () => setShowStickySearch(window.scrollY > 320);
+    updateStickySearch();
+    window.addEventListener("scroll", updateStickySearch, { passive: true });
+    return () => window.removeEventListener("scroll", updateStickySearch);
+  }, []);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -63,7 +105,11 @@ export default function App() {
 
   const handleFilterChange = (event) => {
     const { name, value } = event.target;
-    const nextFilters = { ...filters, [name]: value };
+    const nextFilters = {
+      ...filters,
+      [name]: value,
+      ...(name === "make" && value !== filters.make ? { model: "" } : {}),
+    };
     const searchableFields = ["q", "make", "model", "condition", "minYear", "maxYear"];
     const hasSearchFilters = searchableFields.some((field) => nextFilters[field].trim() !== "");
     const hadSubmittedSearch = searchableFields.some((field) => {
@@ -117,6 +163,31 @@ export default function App() {
     setCriteria((current) => ({ ...current, page }));
   }, []);
 
+  const handleSortChange = ({ sortBy, direction }) => {
+    setError("");
+    setValidationError("");
+    setFilters((current) => ({ ...current, sortBy, direction }));
+    setCriteria((current) => ({ ...current, sortBy, direction, page: 0 }));
+  };
+
+  const handlePageSizeChange = (size) => {
+    const pageSize = Number(size);
+    setError("");
+    setValidationError("");
+    setFilters((current) => ({ ...current, size: String(pageSize) }));
+    setCriteria((current) => ({ ...current, size: pageSize, page: 0 }));
+  };
+
+  const handleFavoriteToggle = useCallback((vehicleId) => {
+    setFavoriteIds((current) => current.includes(vehicleId)
+      ? current.filter((id) => id !== vehicleId)
+      : [...current, vehicleId]);
+  }, []);
+
+  const showFilters = () => {
+    document.querySelector(".search-panel")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
+
   const handleRetry = useCallback(() => {
     setRequestVersion((current) => current + 1);
   }, []);
@@ -125,9 +196,7 @@ export default function App() {
     <div className="app-shell">
       <header className="site-header">
         <a className="brand" href="/" aria-label="Copart Vehicle Search home">
-          <span className="brand__text">
-            <strong>COPART</strong>
-          </span>
+          <img src="/copart-logo.svg" alt="Copart" />
         </a>
       </header>
 
@@ -135,9 +204,9 @@ export default function App() {
         <section className="hero">
           <div className="hero__content">
             <p className="eyebrow eyebrow--light">Vehicle marketplace</p>
-            <h1>Find the right vehicle.<br />Start with a search.</h1>
+            <h1>Find a vehicle</h1>
             <p className="hero__description">
-              Explore auction listings and narrow down your next opportunity.
+              Search by make, model, lot number, or location.
             </p>
           </div>
           <div className="hero__art" aria-hidden="true">
@@ -157,12 +226,38 @@ export default function App() {
             isLoading={isLoading}
             validationError={validationError}
           />
+          {showStickySearch && (
+            <div className="sticky-search" role="region" aria-label="Quick vehicle search">
+              <form className="sticky-search__form" onSubmit={handleSubmit}>
+                <label className="search-field" htmlFor="sticky-query">
+                  <span className="search-field__icon" aria-hidden="true">⌕</span>
+                  <span className="sr-only">Search by vehicle, lot, or location</span>
+                  <input
+                    id="sticky-query"
+                    name="q"
+                    type="search"
+                    placeholder="Search make, model, lot number, or location"
+                    value={filters.q}
+                    onChange={handleFilterChange}
+                  />
+                </label>
+                <button className="button button--secondary" type="button" onClick={showFilters}>
+                  Filters
+                </button>
+              </form>
+            </div>
+          )}
           <VehicleResults
             result={result}
             isLoading={isLoading}
             error={error}
             onPageChange={handlePageChange}
             onRetry={handleRetry}
+            criteria={criteria}
+            onSortChange={handleSortChange}
+            onPageSizeChange={handlePageSizeChange}
+            favoriteIds={favoriteIds}
+            onFavoriteToggle={handleFavoriteToggle}
           />
         </div>
       </main>
