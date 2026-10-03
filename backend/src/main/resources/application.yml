@@ -15,7 +15,9 @@ spring:
         format_sql: true
   h2:
     console:
-      enabled: true
+      # Off by default so the database console is never exposed on the public deployment.
+      # Run locally with H2_CONSOLE_ENABLED=true to use it at /h2-console.
+      enabled: ${H2_CONSOLE_ENABLED:false}
 
 server:
   port: ${PORT:8080}
@@ -23,3 +25,9 @@ server:
 openai:
   api-key: ${OPENAI_API_KEY:}
   model: ${OPENAI_MODEL:gpt-5.6-luna}
+
+ai-search:
+  rate-limit:
+    # Per visitor (by IP) per minute, and across all visitors per hour.
+    per-client-per-minute: ${AI_SEARCH_LIMIT_PER_MINUTE:10}
+    global-per-hour: ${AI_SEARCH_LIMIT_PER_HOUR:200}

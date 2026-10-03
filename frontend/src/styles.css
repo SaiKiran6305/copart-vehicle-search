@@ -8,7 +8,7 @@
   --navy: #0b1d39;
   --blue: #2662d9;
   --blue-dark: #063598;
-  --muted: #6d7889;
+  --muted: #647084;
   --line: #e7eaf0;
   --surface: #ffffff;
 }
@@ -101,7 +101,7 @@ a:focus-visible {
 
 .eyebrow {
   margin: 0 0 8px;
-  color: #7d8ba0;
+  color: #647084;
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.13em;
@@ -211,7 +211,7 @@ a:focus-visible {
 .ai-search__intro { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
 .ai-search__spark { display: grid; width: 32px; height: 32px; place-items: center; border-radius: 9px; background: #e5edff; color: #315fbd; font-size: 18px; }
 .ai-search__intro label { display: block; color: #203b6b; font-size: 14px; font-weight: 700; }
-.ai-search__intro p { margin: 3px 0 0; color: #71809a; font-size: 11px; }
+.ai-search__intro p { margin: 3px 0 0; color: var(--muted); font-size: 11px; }
 .ai-search__controls { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 9px; }
 .ai-search__controls input { width: 100%; min-width: 0; height: 42px; padding: 0 12px; border: 1px solid #d5deed; border-radius: 7px; background: #fff; color: #1c2a40; font-size: 13px; }
 .ai-search__controls input::placeholder { color: #909db1; }
@@ -325,7 +325,7 @@ a:focus-visible {
 
 .year-filter legend {
   grid-column: 1 / -1;
-  margin-bottom: -7px;
+  margin-bottom: 7px;
 }
 
 .year-filter > span {
@@ -441,6 +441,28 @@ a:focus-visible {
   margin-top: 24px;
   padding: 24px 27px 0;
   overflow: hidden;
+  scroll-margin-top: 88px;
+}
+
+.results .vehicle-grid {
+  transition: opacity 150ms ease;
+}
+
+.results.is-updating .vehicle-grid {
+  opacity: 0.55;
+}
+
+.results__updating {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.spinner--small {
+  width: 13px;
+  height: 13px;
 }
 
 .results__header {
@@ -636,7 +658,7 @@ a:focus-visible {
 
 .vehicle-card__heading p {
   margin: 5px 0 0;
-  color: #778498;
+  color: var(--muted);
   font-size: 11px;
 }
 
@@ -660,6 +682,21 @@ a:focus-visible {
   white-space: normal;
 }
 
+.condition-pill--good {
+  background: #e7f6ec;
+  color: #17643a;
+}
+
+.condition-pill--caution {
+  background: #fff3df;
+  color: #8a4b00;
+}
+
+.condition-pill--severe {
+  background: #fde9e7;
+  color: #a3211a;
+}
+
 .vehicle-card__details {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -676,7 +713,7 @@ a:focus-visible {
 
 .vehicle-card__details dt,
 .vehicle-card__value > span {
-  color: #7b8798;
+  color: var(--muted);
   font-size: 10px;
 }
 
@@ -719,7 +756,7 @@ a:focus-visible {
 
 .pagination p {
   margin: 0;
-  color: #748094;
+  color: var(--muted);
   font-size: 12px;
 }
 
@@ -761,6 +798,10 @@ a:focus-visible {
 
 .empty-state h2 {
   font-size: 18px;
+}
+
+.empty-state .button {
+  margin-top: 16px;
 }
 
 .empty-state p {
@@ -835,7 +876,7 @@ a:focus-visible {
   gap: 12px;
   margin: auto auto 0;
   padding: 20px 0 26px;
-  color: #8993a2;
+  color: var(--muted);
   font-size: 11px;
 }
 
@@ -918,19 +959,28 @@ a:focus-visible {
     padding: 0 11px;
   }
 
-  .search-field input {
-    font-size: 12px;
-  }
 
   .filter-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 14px 10px;
   }
 
+  .search-field input,
+  .ai-search__controls input,
   .form-control input,
   .form-control select,
-  .year-filter input {
-    font-size: 11px;
+  .year-filter input,
+  .results__sort select,
+  .pagination__size select {
+    font-size: 16px;
+  }
+
+  .search-field input::placeholder {
+    font-size: 13px;
+  }
+
+  .year-filter {
+    grid-column: 1 / -1;
   }
 
   .search-actions {

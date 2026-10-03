@@ -4,6 +4,8 @@
 
 A vehicle-search prototype for a Software Engineering Intern take-home assignment. It exposes a paginated REST API over synthetic vehicle auction records. No real Copart data is used.
 
+Live demo: https://copart-vehicle-search.up.railway.app/
+
 ## Technology
 
 - Backend: Java 17 and Spring Boot
@@ -55,17 +57,17 @@ The output is generated in `frontend/dist`.
 
 The repository-root `Dockerfile` builds the React app, copies the production files into Spring Boot's static resources, and packages the frontend and API into one runnable image. Railway can detect and build this root `Dockerfile`; the application listens on Railway's `PORT` environment variable.
 
-After connecting the GitHub repository to a Railway service, use the repository root as the source directory and the root `Dockerfile` for the build. Once the service deploys, generate a public domain in the service's Networking settings. Railway provides the public URL; no production URL is available in this repository before that deployment.
+After connecting the GitHub repository to a Railway service, use the repository root as the source directory and the root `Dockerfile` for the build. Once the service deploys, generate a public domain in the service's Networking settings. Railway provides the public URL; the current deployment is at https://copart-vehicle-search.up.railway.app/.
 
 ## Frontend
 
-The responsive search interface uses the backend API for vehicle data. It includes free-text search, make/model/condition and year filters, combined sort choices, configurable page size, paginated card results, and loading, validation, error, and empty-result states. Make and model options are linked. Saved vehicle hearts persist in local storage and sync across tabs in the same browser profile; they are not shared between separate profiles or devices. Vehicle cards use four columns on wide screens, three on smaller desktop widths, two on tablets, and one on narrow phones.
+The responsive search interface uses the backend API for vehicle data. It includes free-text search, make/model/condition, estimated-value and year filters, combined sort choices, configurable page size, paginated card results, and loading, validation, error, and empty-result states. Make and model options are linked. Dropdown filters apply immediately together with any text or years already typed; text and year changes apply on Search or Enter. While a new page loads, the current cards stay visible (dimmed) so the page does not jump. Each card shows an illustrative photo chosen by the model's body style and a colour-coded condition badge. Saved vehicle hearts persist in local storage and sync across tabs in the same browser profile; they are not shared between separate profiles or devices. Vehicle cards use four columns on wide screens, three on smaller desktop widths, two on tablets, and one on narrow phones.
 
 The frontend is a Vite app for local development and is bundled into the Spring Boot application by the root Dockerfile for deployment.
 
 ## Database
 
-Local development uses a persistent file-based H2 database at `jdbc:h2:file:./data/copartdb`, with username `sa` and an empty password. The database files are stored under `backend/data` when started from the backend directory. Hibernate updates the local schema.
+Local development uses a persistent file-based H2 database at `jdbc:h2:file:./data/copartdb`, with username `sa` and an empty password. The database files are stored under `backend/data` when started from the backend directory. Hibernate updates the local schema. The H2 web console is disabled by default; start the backend with `H2_CONSOLE_ENABLED=true` to use it locally at `/h2-console`.
 
 Tests override this configuration to use an in-memory H2 database and recreate its schema for each test run.
 
@@ -100,12 +102,26 @@ Supported query parameters:
 | `model` | Case-insensitive exact model filter |
 | `condition` | Case-insensitive exact condition filter |
 | `minYear`, `maxYear` | Inclusive year range |
+| `minPrice`, `maxPrice` | Estimated value range; `minPrice` is inclusive and `maxPrice` is exclusive, so `$10,000–$20,000` buckets don't overlap |
 | `page` | Zero-based page number; defaults to `0` |
-| `size` | Page size from 1 through 100; defaults to `10` |
-| `sortBy` | One of `year`, `make`, `model`, `saleDate`, `estimatedValue`, or `odometer`; defaults to `saleDate` |
+| `size` | Page size from 1 through 100; defaults to `12` |
+| `sortBy` | One of `year`, `make`, `model`, `saleDate`, `estimatedValue`, or `odometer`; defaults to `saleDate`. Ties are broken by id so paging is stable |
 | `direction` | `asc` or `desc`; defaults to `asc` |
 
-The response includes the current page's `content` and pagination metadata such as `number`, `size`, `totalElements`, `totalPages`, `first`, and `last`. Invalid page/size values, unsupported sort fields or directions, and inverted year ranges return HTTP 400.
+The response includes the current page's `content` and pagination metadata such as `number`, `size`, `totalElements`, `totalPages`, `first`, and `last`. Invalid page/size values, unsupported sort fields or directions, inverted year ranges, and negative or inverted value ranges return HTTP 400.
+
+### AI natural-language search
+
+```
+POST /api/ai-search
+{"query": "Toyota under $20,000 near Dallas", "clarification": ""}
+```
+
+Turns a free-text request into the existing search filters using the OpenAI Responses API, then the frontend runs the normal `/api/vehicles` search with them. It returns either `{"status":"READY","filters":{...}}` or `{"status":"CLARIFICATION","question":"..."}`. Returned makes, models, conditions, years, and prices are validated against the supported values before they are used.
+
+Configuration: set `OPENAI_API_KEY` (and optionally `OPENAI_MODEL`) in the environment, for example in the Railway service variables. Without a key the endpoint returns HTTP 503 and the UI shows "AI search is not configured on the server yet." The `maxPriceInclusive` search parameter (inclusive upper bound) exists for this feature.
+
+Rate limits protect the API key from abuse: each visitor (by IP) can make 10 AI searches per minute, and all visitors together 200 per hour. Over the limit the endpoint returns HTTP 429 with a `Retry-After` header and the UI asks the visitor to wait. Change the limits with `AI_SEARCH_LIMIT_PER_MINUTE` and `AI_SEARCH_LIMIT_PER_HOUR`. Counters are kept in memory, so they reset when the service restarts.
 
 ## Assumptions and limitations
 

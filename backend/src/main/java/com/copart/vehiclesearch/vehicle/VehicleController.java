@@ -63,7 +63,11 @@ public class VehicleController {
 
         Sort.Direction sortDirection = "desc".equalsIgnoreCase(direction)
                 ? Sort.Direction.DESC : Sort.Direction.ASC;
-        Pageable pageable = PageRequest.of(page, size, Sort.by(sortDirection, sortBy));
+        // Many vehicles share a year, make or value, so add the id as a tiebreaker.
+        // Without it the database may order ties differently per query and a vehicle
+        // can appear on two pages or be skipped while paging.
+        Sort sort = Sort.by(sortDirection, sortBy).and(Sort.by(Sort.Direction.ASC, "id"));
+        Pageable pageable = PageRequest.of(page, size, sort);
 
         return ResponseEntity.ok(VehicleSearchResponse.from(vehicleService.search(
                 q, make, model, condition, minYear, maxYear, minPrice, maxPrice, maxPriceInclusive, pageable)));

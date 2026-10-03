@@ -1,4 +1,5 @@
-import vehicleImages from "../data/vehicleImages.js";
+import { getVehicleImage } from "../data/vehicleImages.js";
+import { getConditionTone } from "../data/conditions.js";
 
 const currency = new Intl.NumberFormat("en-US", {
   style: "currency",
@@ -19,7 +20,7 @@ function formatDate(value) {
 }
 
 export default function VehicleCard({ vehicle, isFavorite, onFavoriteToggle }) {
-  const image = vehicleImages[vehicle.make] || vehicleImages.default;
+  const image = getVehicleImage(vehicle);
 
   return (
     <article
@@ -32,6 +33,10 @@ export default function VehicleCard({ vehicle, isFavorite, onFavoriteToggle }) {
           src={image}
           alt=""
           aria-hidden="true"
+          width="720"
+          height="540"
+          loading="lazy"
+          decoding="async"
         />
         <span className="vehicle-card__visual-year">{vehicle.year}</span>
         <span className="vehicle-card__lot">{vehicle.lotNumber}</span>
@@ -56,7 +61,9 @@ export default function VehicleCard({ vehicle, isFavorite, onFavoriteToggle }) {
             <h3>{vehicle.make} {vehicle.model}</h3>
             <p>{vehicle.location}</p>
           </div>
-          <span className="condition-pill">{vehicle.condition}</span>
+          <span className={`condition-pill condition-pill--${getConditionTone(vehicle.condition)}`}>
+            {vehicle.condition}
+          </span>
         </div>
 
         <dl className="vehicle-card__details">
