@@ -8,7 +8,7 @@ All vehicle records are synthetic. This project does not use or represent live C
 
 ## What it does
 
-- Search by keyword across lot number, make, model, and location.
+- Search by keyword: each word is matched against the lot number, make, model, and location, and a four-digit number also matches the year (for example `toyota dallas` or `2018 camry`).
 - Filter by make, model, primary damage, condition, year range, and estimated value.
 - Sort and paginate results; the UI offers page sizes of 12, 24, 48, and 96.
 - Search with regular keywords using **Search** or Enter, or send the same text to **Ask AI** to interpret it into supported filters.
@@ -21,7 +21,7 @@ All vehicle records are synthetic. This project does not use or represent live C
 
 | Area | Technologies in this repository |
 | --- | --- |
-| Frontend | React 19, JavaScript, Vite 6, HTML5, CSS3 |
+| Frontend | React 19, JavaScript, Vite 6 |
 | Backend | Java 17, Spring Boot 3.5.5, Spring Web, Spring Data JPA, Hibernate, Jakarta Bean Validation |
 | Database | H2; file-based for the application and in-memory for tests |
 | AI integration | OpenAI Responses API, called server-side with Java's built-in `HttpClient`; structured JSON is parsed with Jackson |
@@ -58,7 +58,7 @@ flowchart TB
 | AI as an optional query interpreter | AI maps a natural-language request to a strict filter schema; the normal vehicle API still performs the actual search. The backend validates interpreted values against the project's supported catalog. | It requires a server-side API key, sends the submitted query to OpenAI, adds latency, and has usage limits. It is not required for ordinary keyword search. |
 | Applied search state in the URL | Search links can be shared and refreshed, and browser history restores earlier applied filters. | Only applied criteria are serialized; unsent edits in the form are not. |
 
-The backend search path is `VehicleController → VehicleService → VehicleRepository`, with `VehicleSearchSpecification` building optional criteria. The `Vehicle` entity declares indexes for make/model, model year, condition, and primary damage; the free-text substring query spans lot number, make, model, and location. The AI path is `AiSearchController → AiSearchService`; interpreted filters return to the frontend, which submits them to the ordinary vehicle-search endpoint.
+The backend search path is `VehicleController → VehicleService → VehicleRepository`, with `VehicleSearchSpecification` building optional criteria. The `Vehicle` entity declares indexes for make/model, model year, condition, and primary damage; the keyword query splits the text into words and requires each word to match the lot number, make, model, or location (or the year, for a four-digit number). The AI path is `AiSearchController → AiSearchService`; interpreted filters return to the frontend, which submits them to the ordinary vehicle-search endpoint.
 
 ## Search API
 
@@ -83,15 +83,15 @@ GET /api/vehicles?q=Dallas&make=Toyota&page=0&size=12&sortBy=saleDate&direction=
 | `primaryDamage`, `condition` | Case-insensitive exact matches. Damage and condition are separate fields. |
 | `minYear`, `maxYear` | Inclusive year bounds. The API rejects an inverted range. |
 | `minPrice`, `maxPrice` | Estimated-value bounds. The lower bound is inclusive and the upper bound is exclusive. |
-| `maxPriceInclusive` | Inclusive maximum estimated value; used by AI-parsed “up to” requests. It cannot be combined with `maxPrice`. |
-| `page` | Zero-based page index; defaults to `0`. |
+| `maxPriceInclusive` | Inclusive maximum estimated value. AI search uses it for “under”, “up to”, and “within” amounts, so “under $20,000” includes a vehicle valued at exactly $20,000. It cannot be combined with `maxPrice`. |
+| `page` | Zero-based page index; defaults to `0`. The UI's URLs show page numbers starting at 1. |
 | `size` | Results per page; API accepts 1–100 and defaults to `12`. |
 | `sortBy` | One of `year`, `make`, `model`, `saleDate`, `estimatedValue`, or `odometer`; defaults to `saleDate`. |
 | `direction` | `asc` or `desc`; defaults to `asc`. Ties are ordered by id to keep page ordering stable. |
 
 The response contains `content` plus `number`, `size`, `totalElements`, `totalPages`, `first`, and `last`. Each vehicle includes `id`, `lotNumber`, `year`, `make`, `model`, `primaryDamage`, `condition`, `location`, `saleDate`, `odometer`, and `estimatedValue`.
 
-The API returns HTTP 400 for invalid page or size values, unsupported sort values, inverted year ranges, negative/conflicting/inverted price bounds, or values of the wrong type. Errors use the [RFC 9457](https://www.rfc-editor.org/rfc/rfc9457) problem-detail format and say what to fix, for example `{"status":400,"title":"Bad Request","detail":"size must be between 1 and 100."}`; the UI shows the `detail` text. The AI search rate limit (HTTP 429) uses the same format. The UI uses zero-based page indexes for API requests and displays page numbers starting at one in the URL.
+The API returns HTTP 400 for invalid page or size values, unsupported sort values, inverted year ranges, negative/conflicting/inverted price bounds, or values of the wrong type. Errors use the [RFC 9457](https://www.rfc-editor.org/rfc/rfc9457) problem-detail format: the JSON body includes `status`, `title`, and a `detail` that says what to fix, such as `"detail": "size must be between 1 and 100."`. The UI shows the `detail` text. The AI search rate limit (HTTP 429) uses the same format.
 
 ### AI interpretation API
 
@@ -111,10 +111,10 @@ Request fields: `query` is required (1–300 characters); `clarification` is opt
 
 The response is either:
 
-- `READY`, with supported filters such as make, model, primary damage, condition, year bounds, maximum price, and residual keyword `q); or
+- `READY`, with supported filters such as make, model, primary damage, condition, year bounds, maximum price, and any remaining keyword in `q`; or
 - `CLARIFICATION`, with a short question when the request cannot be mapped safely to the available catalog.
 
-AI output uses a strict JSON schema and is checked against supported makes, models, damage types, conditions, year limits, and price limits before it is returned. The user query is sent from the backend to the OpenAI Responses API; the API key is never placed in frontend code. Without a configured key, this endpoint returns HTTP 503. Rate limits return HTTP 429 with a `Retry-After` header; an upstream AI failure returns HTTP 502.
+AI output uses a strict JSON schema and is checked against supported makes, models, damage types, conditions, year limits, and price limits before it is returned. The user query is sent from the backend to the OpenAI Responses API; the API key is never placed in frontend code. A blank `query`, or a `query` or `clarification` longer than 300 characters, returns HTTP 400. Without a configured key, this endpoint returns HTTP 503. Rate limits return HTTP 429 with a `Retry-After` header; an upstream AI failure returns HTTP 502.
 
 ## Data and database
 
@@ -132,7 +132,7 @@ The application defaults to the file-based H2 URL `jdbc:h2:file:./data/copartdb`
 
 Tests use a separate in-memory H2 database with a create-and-drop schema. The H2 web console is disabled by default. To enable it for local development only, set `H2_CONSOLE_ENABLED=true`; it is available at `/h2-console`.
 
-The Dockerfile does not mount a persistent volume. Do not rely on the hosted H2 file surviving a container replacement. For durable or production data, use a managed database and configure its credentials and storage separately.
+The Railway service has no persistent volume, so the hosted H2 file is recreated on each deploy and the seed data is loaded again at startup. Nothing users create is stored on the server (saved vehicles stay in the browser), so no data is lost. For durable or production data, use a managed database and configure its credentials and storage separately.
 
 ## Run locally
 
@@ -177,8 +177,8 @@ GitHub Actions runs frontend tests, a production frontend build, and backend tes
 | `PORT` | HTTP port; defaults to 8080. Railway supplies this when deployed. |
 | `OPENAI_API_KEY` | Enables AI interpretation. Keep it server-side and out of Git. |
 | `OPENAI_MODEL` | Overrides the model name; the repository configuration defaults to `gpt-5.6-luna`. |
-| `AI_SEARCH_LIMIT_PER_MINUTE` | Per-client AI request limit; defaults to 10. |
-| `AI_SEARCH_LIMIT_PER_HOUR` | Overall AI request limit; defaults to 200 per running application instance. |
+| `AI_SEARCH_LIMIT_PER_MINUTE` | AI requests allowed per client IP per minute; defaults to 10. |
+| `AI_SEARCH_LIMIT_PER_HOUR` | AI requests allowed per hour across all clients; defaults to 200 per running application instance. |
 | `H2_CONSOLE_ENABLED` | Enables the local H2 console; defaults to false. |
 
 AI rate-limit counters are held in application memory. They reset on restart and are independent per application instance; they are not a distributed quota across multiple replicas.
@@ -212,6 +212,6 @@ The Railway service uses the repository-root Dockerfile and serves the frontend 
 - Synthetic seed data and illustrative images; no live Copart inventory or lot-specific photos.
 - No authentication, authorization, user accounts, or saved-vehicle synchronization across devices.
 - H2 is used by the application; production-grade database persistence and schema migrations are not configured in this repository.
-- Keyword matching is case-insensitive substring matching, not fuzzy, typo-tolerant, or relevance-ranked search.
+- Keyword matching is case-insensitive, word-by-word substring matching, not fuzzy, typo-tolerant, or relevance-ranked search.
 - AI interpretation depends on an external OpenAI API and configured credentials. It supplements the deterministic search API and is optional.
 - Rate limiting is in-memory and per running instance; use a shared limiter if multiple instances must enforce a single global quota.
