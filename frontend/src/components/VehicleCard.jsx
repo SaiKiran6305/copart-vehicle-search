@@ -29,14 +29,13 @@ export default function VehicleCard({ vehicle, isFavorite, onFavoriteToggle }) {
         <img
           className="vehicle-card__image"
           src={image}
-          alt={`${name}, representative photo`}
+          alt={name}
           width="720"
           height="540"
           loading="lazy"
           decoding="async"
         />
         <span className="vehicle-card__visual-year">{vehicle.year}</span>
-        <span className="vehicle-card__representative" aria-hidden="true">Representative photo</span>
         <span className="vehicle-card__lot">{vehicle.lotNumber}</span>
         <button
           className={`favorite-button${isFavorite ? " is-favorite" : ""}`}

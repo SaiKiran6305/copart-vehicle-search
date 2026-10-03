@@ -239,14 +239,14 @@ describe("search state regressions", () => {
     expect(requestParams().get("maxPrice")).toBeNull();
   });
 
-  it("shows primary damage and condition separately, with a labelled representative photo", async () => {
+  it("shows primary damage and condition separately without a representative photo badge", async () => {
     render(<App />);
     const card = await screen.findByRole("article", { name: "2020 Toyota Camry" });
     expect(card.querySelector(".damage-pill")).toHaveClass("damage-pill--good");
     expect(card.querySelector(".damage-pill")).toHaveTextContent("Primary damage: Normal Wear");
     expect(card).toHaveTextContent("ConditionRun and Drive");
-    expect(screen.getByRole("img", { name: "2020 Toyota Camry, representative photo" })).toBeInTheDocument();
-    expect(card).toHaveTextContent("Representative photo");
+    expect(screen.getByRole("img", { name: "2020 Toyota Camry" })).toBeInTheDocument();
+    expect(card).not.toHaveTextContent("Representative photo");
     expect(card.querySelector("img")).toHaveAttribute("src", "/vehicles/blue-sedan.webp");
     expect(card.querySelector("img")).toHaveAttribute("loading", "lazy");
   });
