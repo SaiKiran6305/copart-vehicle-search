@@ -230,19 +230,19 @@ a:focus-visible {
 }
 
 .button--ai {
-  border-color: #5536b2;
-  background: #6042c7;
+  border-color: var(--blue);
+  background: var(--blue);
   color: #fff;
 }
 
 .button--ai:hover:not(:disabled) {
-  border-color: #452a9d;
-  background: #4f34ae;
+  border-color: var(--blue-dark);
+  background: var(--blue-dark);
 }
 
 .button--ai:disabled {
-  border-color: #7865bb;
-  background: #7865bb;
+  border-color: var(--blue);
+  background: var(--blue);
   color: #fff;
   opacity: 0.82;
 }
