@@ -2,7 +2,8 @@ import { describe, expect, it } from "vitest";
 import seedVehicles from "../../../backend/src/main/resources/vehicles.json";
 import { modelsByMake } from "../components/FilterPanel.jsx";
 import { defaultVehicleImage, getVehicleImage, imageByModel } from "./vehicleImages.js";
-import { conditionTone, getConditionTone } from "./conditions.js";
+import { damageTone, getDamageTone, isKnownCondition } from "./conditions.js";
+import { getPriceBounds, priceRanges } from "./searchOptions.js";
 
 describe("vehicle catalog consistency", () => {
   it("has a body-style image for every model in the seed data", () => {
@@ -31,12 +32,24 @@ describe("vehicle catalog consistency", () => {
     expect(getVehicleImage({ make: "Unknown", model: "Unknown" })).toBe(defaultVehicleImage);
   });
 
-  it("assigns a severity tone to every condition in the seed data", () => {
-    const missing = [...new Set(seedVehicles.map((vehicle) => vehicle.condition))]
-      .filter((condition) => !(condition in conditionTone));
-    expect(missing).toEqual([]);
-    expect(getConditionTone("Run & Drive")).toBe("good");
-    expect(getConditionTone("Water/Flood")).toBe("severe");
-    expect(getConditionTone("Hail")).toBe("caution");
+  it("knows every primary damage and condition in the seed data", () => {
+    const unknownDamage = [...new Set(seedVehicles.map((vehicle) => vehicle.primaryDamage))]
+      .filter((damage) => !(damage in damageTone));
+    const unknownConditions = [...new Set(seedVehicles.map((vehicle) => vehicle.condition))]
+      .filter((condition) => !isKnownCondition(condition));
+    expect(unknownDamage).toEqual([]);
+    expect(unknownConditions).toEqual([]);
+    expect(getDamageTone("Normal Wear")).toBe("good");
+    expect(getDamageTone("Water/Flood")).toBe("severe");
+    expect(getDamageTone("Hail")).toBe("caution");
+  });
+
+  it("has seed vehicles in every value range offered", () => {
+    for (const range of priceRanges) {
+      const { minPrice = 0, maxPrice = Infinity } = getPriceBounds(range.value);
+      const matches = seedVehicles.filter((vehicle) =>
+        vehicle.estimatedValue >= minPrice && vehicle.estimatedValue < maxPrice);
+      expect(matches.length, range.label).toBeGreaterThan(0);
+    }
   });
 });

@@ -11,7 +11,8 @@ function makeVehicle(make = "Toyota", model = "Camry", id = 1) {
     year: 2020,
     make,
     model,
-    condition: "Run & Drive",
+    primaryDamage: "Normal Wear",
+    condition: "Run and Drive",
     location: "Dallas, TX",
     saleDate: "2026-10-08",
     odometer: 25000,
@@ -166,12 +167,12 @@ describe("vehicle search interactions", () => {
     render(<App />);
     await screen.findByRole("heading", { name: "300 vehicles" });
 
-    await user.selectOptions(screen.getByLabelText("Estimated value"), "10000-20000");
+    await user.selectOptions(screen.getByLabelText("Estimated value"), "10000-15000");
 
     await waitFor(() => {
       const requestUrl = new URL(global.fetch.mock.calls.at(-1)[0], window.location.origin);
       expect(requestUrl.searchParams.get("minPrice")).toBe("10000");
-      expect(requestUrl.searchParams.get("maxPrice")).toBe("20000");
+      expect(requestUrl.searchParams.get("maxPrice")).toBe("15000");
     });
   });
 
@@ -183,7 +184,7 @@ describe("vehicle search interactions", () => {
       if (url === "/api/ai-search") {
         return { ok: true, json: async () => ({
           status: "READY",
-          filters: { q: "Dallas", make: "Toyota", model: null, condition: null,
+          filters: { q: "Dallas", make: "Toyota", model: null, primaryDamage: null, condition: null,
             minYear: null, maxYear: null, maxPriceInclusive: 20000 },
         }) };
       }
@@ -217,7 +218,7 @@ describe("vehicle search interactions", () => {
         return aiCalls.length === 1
           ? { ok: true, json: async () => ({ status: "CLARIFICATION", question: "Do you mean under $20,000?" }) }
           : { ok: true, json: async () => ({ status: "READY", filters: {
-              q: null, make: "Toyota", model: null, condition: null,
+              q: null, make: "Toyota", model: null, primaryDamage: null, condition: null,
               minYear: null, maxYear: null, maxPriceInclusive: 20000,
             } }) };
       }

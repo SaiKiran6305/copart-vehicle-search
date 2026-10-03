@@ -1,13 +1,14 @@
 // Search state shared by the app: defaults, turning form values into API criteria,
 // and reading/writing the current search in the page URL.
 import { modelsByMake } from "../components/FilterPanel.jsx";
-import { conditionTone } from "./conditions.js";
+import { damageTone, isKnownCondition } from "./conditions.js";
 import { getPriceBounds, isKnownPriceRange, pageSizes, sortOptions } from "./searchOptions.js";
 
 export const initialFilters = {
   q: "",
   make: "",
   model: "",
+  primaryDamage: "",
   condition: "",
   minYear: "",
   maxYear: "",
@@ -66,7 +67,8 @@ export function readSearchFromUrl(search) {
     filters.make = get("make");
     if (modelsByMake[filters.make].includes(get("model"))) filters.model = get("model");
   }
-  if (Object.hasOwn(conditionTone, get("condition"))) filters.condition = get("condition");
+  if (Object.hasOwn(damageTone, get("damage"))) filters.primaryDamage = get("damage");
+  if (isKnownCondition(get("condition"))) filters.condition = get("condition");
   if (!validateYearRange(get("minYear"), get("maxYear"))) {
     filters.minYear = get("minYear");
     filters.maxYear = get("maxYear");
@@ -85,9 +87,10 @@ export function readSearchFromUrl(search) {
 // Criteria -> URL query string, leaving out defaults. Pages are 1-based in the URL, as shown on screen.
 export function searchToQueryString(criteria) {
   const params = new URLSearchParams();
-  for (const key of ["q", "make", "model", "condition", "minYear", "maxYear"]) {
+  const urlNames = { primaryDamage: "damage" };
+  for (const key of ["q", "make", "model", "primaryDamage", "condition", "minYear", "maxYear"]) {
     const value = criteria[key] == null ? "" : String(criteria[key]).trim();
-    if (value) params.set(key, value);
+    if (value) params.set(urlNames[key] ?? key, value);
   }
   if (criteria.priceRange) params.set("price", criteria.priceRange);
   if (criteria.sortBy !== initialFilters.sortBy || criteria.direction !== initialFilters.direction) {

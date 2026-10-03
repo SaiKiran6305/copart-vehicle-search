@@ -16,12 +16,13 @@ public class VehicleService {
     }
 
     public Page<VehicleResponse> search(String query, String make, String model,
-                                        String condition, Integer minYear, Integer maxYear,
+                                        String primaryDamage, String condition,
+                                        Integer minYear, Integer maxYear,
                                         BigDecimal minPrice, BigDecimal maxPrice,
                                         BigDecimal maxPriceInclusive, Pageable pageable) {
         return vehicleRepository.findAll(
                         VehicleSearchSpecification.matches(
-                                query, make, model, condition, minYear, maxYear, minPrice, maxPrice, maxPriceInclusive),
+                                query, make, model, primaryDamage, condition, minYear, maxYear, minPrice, maxPrice, maxPriceInclusive),
                         pageable)
                 .map(VehicleResponse::from);
     }

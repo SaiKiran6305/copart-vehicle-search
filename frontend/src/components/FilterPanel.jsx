@@ -1,4 +1,5 @@
-import { priceRanges } from "../data/searchOptions.js";
+import { priceRangeLabel, priceRanges } from "../data/searchOptions.js";
+import { conditions, primaryDamages } from "../data/conditions.js";
 
 export const modelsByMake = {
   BMW: ["3 Series", "5 Series", "X3"],
@@ -15,7 +16,7 @@ export const modelsByMake = {
 
 export default function FilterPanel({ filters, onChange }) {
   return (
-    <div className="filter-grid">
+    <div className="filter-grid" id="search-filters">
       <label className="form-control" htmlFor="make">
         <span>Make</span>
         <select
@@ -47,20 +48,25 @@ export default function FilterPanel({ filters, onChange }) {
         </select>
       </label>
 
+      <label className="form-control" htmlFor="primaryDamage">
+        <span>Primary damage</span>
+        <select id="primaryDamage" name="primaryDamage" value={filters.primaryDamage} onChange={onChange}>
+          <option value="">Any damage</option>
+          {primaryDamages.map((damage) => (
+            <option key={damage} value={damage}>{damage}</option>
+          ))}
+        </select>
+      </label>
+
       <label className="form-control" htmlFor="condition">
         <span>Condition</span>
         <select id="condition" name="condition" value={filters.condition} onChange={onChange}>
           <option value="">Any condition</option>
-          <option value="Run & Drive">Run &amp; Drive</option>
-          <option value="Normal Wear">Normal Wear</option>
-          <option value="Front End">Front End</option>
-          <option value="Rear End">Rear End</option>
-          <option value="Side">Side</option>
-          <option value="Mechanical">Mechanical</option>
-          <option value="Hail">Hail</option>
-          <option value="Water/Flood">Water/Flood</option>
-          <option value="Vandalism">Vandalism</option>
-          <option value="Minor Dent/Scratches">Minor Dent/Scratches</option>
+          {conditions.map((condition) => (
+            <option key={condition.value} value={condition.value} title={condition.description}>
+              {condition.value}
+            </option>
+          ))}
         </select>
       </label>
 
@@ -71,7 +77,9 @@ export default function FilterPanel({ filters, onChange }) {
           {priceRanges.map((range) => (
             <option key={range.value} value={range.value}>{range.label}</option>
           ))}
-          {filters.priceRange.startsWith("up-to-") && <option value={filters.priceRange}>Up to ${Number(filters.priceRange.slice(6)).toLocaleString()}</option>}
+          {filters.priceRange.startsWith("up-to-") && (
+            <option value={filters.priceRange}>{priceRangeLabel(filters.priceRange)}</option>
+          )}
         </select>
       </label>
 

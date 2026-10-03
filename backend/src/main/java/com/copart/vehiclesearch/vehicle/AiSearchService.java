@@ -29,9 +29,11 @@ public class AiSearchService {
     private static final Logger log = LoggerFactory.getLogger(AiSearchService.class);
     private static final Set<String> MAKES = Set.of(
             "BMW", "Chevrolet", "Ford", "Honda", "Hyundai", "Jeep", "Kia", "Nissan", "Tesla", "Toyota");
+    private static final Set<String> PRIMARY_DAMAGES = Set.of(
+            "Front End", "Rear End", "Side", "Minor Dent/Scratches", "Normal Wear", "Hail",
+            "Vandalism", "Mechanical", "Water/Flood");
     private static final Set<String> CONDITIONS = Set.of(
-            "Run & Drive", "Normal Wear", "Front End", "Rear End", "Side", "Mechanical",
-            "Hail", "Water/Flood", "Vandalism", "Minor Dent/Scratches");
+            "Run and Drive", "Engine Start Program", "Enhanced Vehicles", "Stationary");
     private static final Map<String, Set<String>> MODELS = Map.of(
             "BMW", Set.of("3 Series", "5 Series", "X3"),
             "Chevrolet", Set.of("Equinox", "Malibu", "Silverado"),
@@ -49,6 +51,7 @@ public class AiSearchService {
     private static final Map<String, String> MAKE_BY_MODEL_KEY = new HashMap<>();
     private static final Map<String, String> MODEL_BY_KEY = new HashMap<>();
     private static final Map<String, String> MAKE_BY_KEY = new HashMap<>();
+    private static final Map<String, String> DAMAGE_BY_KEY = new HashMap<>();
     private static final Map<String, String> CONDITION_BY_KEY = new HashMap<>();
 
     static {
@@ -58,10 +61,8 @@ public class AiSearchService {
         }));
         MAKES.forEach(make -> MAKE_BY_KEY.put(key(make), make));
         MAKE_BY_KEY.put("chevy", "Chevrolet");
-        CONDITIONS.forEach(condition -> CONDITION_BY_KEY.put(key(condition), condition));
+        PRIMARY_DAMAGES.forEach(damage -> DAMAGE_BY_KEY.put(key(damage), damage));
         Map.of(
-                "runanddrive", "Run & Drive",
-                "runsanddrives", "Run & Drive",
                 "flood", "Water/Flood",
                 "water", "Water/Flood",
                 "flooddamage", "Water/Flood",
@@ -69,23 +70,40 @@ public class AiSearchService {
                 "minordents", "Minor Dent/Scratches",
                 "dentsandscratches", "Minor Dent/Scratches",
                 "scratches", "Minor Dent/Scratches",
-                "haildamage", "Hail"
+                "haildamage", "Hail",
+                "frontenddamage", "Front End",
+                "rearenddamage", "Rear End"
+        ).forEach(DAMAGE_BY_KEY::put);
+        CONDITIONS.forEach(condition -> CONDITION_BY_KEY.put(key(condition), condition));
+        Map.of(
+                "rundrive", "Run and Drive",
+                "runsanddrives", "Run and Drive",
+                "runsdrives", "Run and Drive",
+                "drivable", "Run and Drive",
+                "enginestarts", "Engine Start Program",
+                "starts", "Engine Start Program",
+                "enhanced", "Enhanced Vehicles",
+                "enhancedvehicle", "Enhanced Vehicles",
+                "doesnotstart", "Stationary",
+                "nonrunner", "Stationary"
         ).forEach(CONDITION_BY_KEY::put);
     }
 
     private static final String INSTRUCTIONS = """
             Convert the user's vehicle request into supported filters only.
-            The supported makes, models, and vehicle conditions are:
+            The supported makes, models, primary damage types, and conditions are:
             BMW (3 Series, 5 Series, X3); Chevrolet (Equinox, Malibu, Silverado);
             Ford (Escape, F-150, Mustang); Honda (Accord, CR-V, Civic);
             Hyundai (Elantra, Santa Fe, Tucson); Jeep (Cherokee, Compass, Wrangler);
             Kia (Forte, Sorento, Sportage); Nissan (Altima, Rogue, Sentra);
             Tesla (Model 3, Model S, Model Y); Toyota (Camry, Corolla, RAV4).
-            Conditions: Run & Drive, Normal Wear, Front End, Rear End, Side, Mechanical,
-            Hail, Water/Flood, Vandalism, Minor Dent/Scratches.
+            Primary damage (the main damage on the vehicle): Front End, Rear End, Side,
+            Minor Dent/Scratches, Normal Wear, Hail, Vandalism, Mechanical, Water/Flood.
+            Condition (whether the vehicle was verified to run): Run and Drive, Engine Start Program,
+            Enhanced Vehicles, Stationary.
             Put the location, lot number, or remaining keyword text in q, since the existing
             keyword search checks lot number, make, model, and location. Put a requested make in
-            make. Set model and condition only if specified. A clear "under", "up to", or "within"
+            make. Set model, primaryDamage, and condition only if specified. A clear "under", "up to", or "within"
             dollar amount maps to maxPriceInclusive (e.g., under $20,000 maps to 20000).
             Use READY only if the request can be represented without guessing. Otherwise return
             CLARIFICATION and ask one short question. Use the user's clarification when provided.
@@ -174,12 +192,14 @@ public class AiSearchService {
         fields.set("q", nullableString());
         fields.set("make", nullableString());
         fields.set("model", nullableString());
+        fields.set("primaryDamage", nullableString());
         fields.set("condition", nullableString());
         fields.set("minYear", nullableInteger());
         fields.set("maxYear", nullableInteger());
         fields.set("maxPriceInclusive", nullableNumber());
         ArrayNode filterRequired = filters.putArray("required");
-        for (String key : new String[]{"q", "make", "model", "condition", "minYear", "maxYear", "maxPriceInclusive"}) {
+        for (String key : new String[]{"q", "make", "model", "primaryDamage", "condition", "minYear", "maxYear",
+                "maxPriceInclusive"}) {
             filterRequired.add(key);
         }
         schema.putArray("required").add("status").add("question").add("filters");
@@ -243,11 +263,24 @@ public class AiSearchService {
             make = modelMake;
         }
 
+        String damageText = clean(filters.path("primaryDamage").asText(null), 60);
+        String primaryDamage = damageText == null ? null : DAMAGE_BY_KEY.get(key(damageText));
+        if (damageText != null && primaryDamage == null) {
+            return AiSearchResponse.clarification("Which kind of damage did you mean? For example Front End, Hail, "
+                    + "Mechanical, or Water/Flood.");
+        }
+
         String conditionText = clean(filters.path("condition").asText(null), 60);
         String condition = conditionText == null ? null : CONDITION_BY_KEY.get(key(conditionText));
+        if (conditionText != null && condition == null && DAMAGE_BY_KEY.containsKey(key(conditionText))
+                && primaryDamage == null) {
+            // The model put a damage type in condition; move it to primary damage.
+            primaryDamage = DAMAGE_BY_KEY.get(key(conditionText));
+            conditionText = null;
+        }
         if (conditionText != null && condition == null) {
-            return AiSearchResponse.clarification("Which vehicle condition did you mean? For example Run & Drive, "
-                    + "Front End, Hail, or Water/Flood.");
+            return AiSearchResponse.clarification("Which condition did you mean? For example Run and Drive, "
+                    + "Engine Start Program, or Stationary.");
         }
 
         Integer minYear = integer(filters.path("minYear"));
@@ -262,12 +295,13 @@ public class AiSearchService {
         if (price != null && (price.signum() < 0 || price.compareTo(new BigDecimal("1000000")) > 0)) {
             throw new ResponseStatusException(HttpStatus.BAD_GATEWAY, "AI returned an invalid price limit");
         }
-        if (q == null && make == null && modelName == null && condition == null
+        if (q == null && make == null && modelName == null && primaryDamage == null && condition == null
                 && minYear == null && maxYear == null && price == null) {
             return AiSearchResponse.clarification(
                     "What are you looking for? For example a make or model, a price limit, a year range, or a location.");
         }
-        return AiSearchResponse.ready(new AiSearchResponse.Filters(q, make, modelName, condition, minYear, maxYear, price));
+        return AiSearchResponse.ready(new AiSearchResponse.Filters(q, make, modelName, primaryDamage, condition, minYear, maxYear,
+                price));
     }
 
     private Integer integer(JsonNode node) {

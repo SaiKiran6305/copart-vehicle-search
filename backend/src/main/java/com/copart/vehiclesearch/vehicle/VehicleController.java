@@ -30,6 +30,7 @@ public class VehicleController {
             @RequestParam(required = false) String q,
             @RequestParam(required = false) String make,
             @RequestParam(required = false) String model,
+            @RequestParam(required = false) String primaryDamage,
             @RequestParam(required = false) String condition,
             @RequestParam(required = false) Integer minYear,
             @RequestParam(required = false) Integer maxYear,
@@ -70,6 +71,6 @@ public class VehicleController {
         Pageable pageable = PageRequest.of(page, size, sort);
 
         return ResponseEntity.ok(VehicleSearchResponse.from(vehicleService.search(
-                q, make, model, condition, minYear, maxYear, minPrice, maxPrice, maxPriceInclusive, pageable)));
+                q, make, model, primaryDamage, condition, minYear, maxYear, minPrice, maxPrice, maxPriceInclusive, pageable)));
     }
 }

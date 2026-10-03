@@ -16,7 +16,8 @@ function makePage(params) {
       year: 2020,
       make: "Toyota",
       model: "Camry",
-      condition: "Run & Drive",
+      primaryDamage: "Normal Wear",
+      condition: "Run and Drive",
       location: "Dallas, TX",
       saleDate: "2026-10-08",
       odometer: 25000,
@@ -64,7 +65,7 @@ describe("search kept in the URL", () => {
   });
 
   it("restores the search from a shared or refreshed link", async () => {
-    window.history.replaceState(null, "", "/?q=dallas&make=Honda&model=Civic&condition=Hail&minYear=2019&maxYear=2023&price=10000-20000&sortBy=year&direction=desc&size=24&page=3");
+    window.history.replaceState(null, "", "/?q=dallas&make=Honda&model=Civic&damage=Hail&condition=Run+and+Drive&minYear=2019&maxYear=2023&price=10000-15000&sortBy=year&direction=desc&size=24&page=3");
     render(<App />);
     await screen.findByRole("heading", { name: "300 vehicles" });
 
@@ -73,11 +74,12 @@ describe("search kept in the URL", () => {
       q: "dallas",
       make: "Honda",
       model: "Civic",
-      condition: "Hail",
+      primaryDamage: "Hail",
+      condition: "Run and Drive",
       minYear: "2019",
       maxYear: "2023",
       minPrice: "10000",
-      maxPrice: "20000",
+      maxPrice: "15000",
       page: "2",
       size: "24",
       sortBy: "year",
@@ -126,7 +128,7 @@ describe("search kept in the URL", () => {
   });
 
   it("round-trips every search option through the URL", () => {
-    const link = "?q=lot+1001&make=Ford&model=F-150&condition=Water%2FFlood&minYear=2018&maxYear=2022&price=50000-&sortBy=odometer&direction=asc&size=48&page=2";
+    const link = "?q=lot+1001&make=Ford&model=F-150&damage=Water%2FFlood&condition=Stationary&minYear=2018&maxYear=2022&price=30000-&sortBy=odometer&direction=asc&size=48&page=2";
     expect(searchToQueryString(readSearchFromUrl(link).criteria)).toBe(link);
   });
 });

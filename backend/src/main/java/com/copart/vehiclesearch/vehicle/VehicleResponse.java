@@ -9,6 +9,7 @@ public record VehicleResponse(
         Integer year,
         String make,
         String model,
+        String primaryDamage,
         String condition,
         String location,
         LocalDate saleDate,
@@ -18,7 +19,7 @@ public record VehicleResponse(
     public static VehicleResponse from(Vehicle vehicle) {
         return new VehicleResponse(
                 vehicle.getId(), vehicle.getLotNumber(), vehicle.getYear(),
-                vehicle.getMake(), vehicle.getModel(), vehicle.getCondition(),
+                vehicle.getMake(), vehicle.getModel(), vehicle.getPrimaryDamage(), vehicle.getCondition(),
                 vehicle.getLocation(), vehicle.getSaleDate(), vehicle.getOdometer(),
                 vehicle.getEstimatedValue());
     }

@@ -24,18 +24,34 @@ const MODELS = {
   Toyota: { Camry: 29000, Corolla: 23000, RAV4: 32000 },
 };
 
-// Condition -> [relative frequency, share of value kept].
-const CONDITIONS = {
-  "Run & Drive": [22, 1],
-  "Normal Wear": [12, 0.95],
-  "Minor Dent/Scratches": [10, 0.88],
-  Hail: [7, 0.8],
-  Vandalism: [5, 0.78],
-  "Front End": [14, 0.66],
-  "Rear End": [10, 0.7],
-  Side: [8, 0.7],
-  Mechanical: [7, 0.58],
-  "Water/Flood": [5, 0.42],
+// Primary damage (Copart's main damage category) -> [relative frequency, share of value kept].
+const PRIMARY_DAMAGE = {
+  "Front End": [22, 0.66],
+  "Rear End": [14, 0.72],
+  Side: [11, 0.72],
+  "Minor Dent/Scratches": [12, 0.9],
+  "Normal Wear": [12, 0.96],
+  Hail: [8, 0.82],
+  Vandalism: [6, 0.8],
+  Mechanical: [8, 0.6],
+  "Water/Flood": [7, 0.45],
+};
+
+// Condition (Copart lot highlight) -> share of value kept.
+const CONDITION_VALUE = {
+  "Run and Drive": 1,
+  "Enhanced Vehicles": 1.05,
+  "Engine Start Program": 0.9,
+  Stationary: 0.8,
+};
+
+// How likely each condition is for a given damage: flood and mechanical damage rarely run and drive.
+const CONDITION_ODDS = {
+  default: { "Run and Drive": 55, "Engine Start Program": 20, "Enhanced Vehicles": 8, Stationary: 17 },
+  "Front End": { "Run and Drive": 35, "Engine Start Program": 25, "Enhanced Vehicles": 5, Stationary: 35 },
+  Side: { "Run and Drive": 40, "Engine Start Program": 25, "Enhanced Vehicles": 5, Stationary: 30 },
+  Mechanical: { "Run and Drive": 5, "Engine Start Program": 25, "Enhanced Vehicles": 2, Stationary: 68 },
+  "Water/Flood": { "Run and Drive": 8, "Engine Start Program": 15, "Enhanced Vehicles": 2, Stationary: 75 },
 };
 
 const LOCATIONS = [
@@ -61,11 +77,12 @@ const between = (min, max) => min + random() * (max - min);
 const integerBetween = (min, max) => Math.floor(between(min, max + 1));
 const pick = (items) => items[Math.floor(random() * items.length)];
 
+// weights: { name: weight } or { name: [weight, ...] }
 function pickWeighted(weights) {
-  const entries = Object.entries(weights);
-  const total = entries.reduce((sum, [, [weight]]) => sum + weight, 0);
+  const entries = Object.entries(weights).map(([name, value]) => [name, Array.isArray(value) ? value[0] : value]);
+  const total = entries.reduce((sum, [, weight]) => sum + weight, 0);
   let roll = random() * total;
-  for (const [name, [weight]] of entries) {
+  for (const [name, weight] of entries) {
     roll -= weight;
     if (roll < 0) return name;
   }
@@ -92,14 +109,17 @@ for (const [make, models] of Object.entries(MODELS)) {
       const year = integerBetween(2016, 2025);
       const age = Math.max(1, REFERENCE_YEAR - year);
       const odometer = Math.max(800, Math.round(age * between(8000, 15000) + between(-3000, 3000)));
-      const condition = pickWeighted(CONDITIONS);
-      const depreciated = newPrice * 0.88 ** age;
+      const primaryDamage = pickWeighted(PRIMARY_DAMAGE);
+      const condition = pickWeighted(CONDITION_ODDS[primaryDamage] ?? CONDITION_ODDS.default);
+      const depreciated = newPrice * 0.9 ** age;
       const mileageFactor = 1 - Math.min(0.25, odometer / 600000);
-      const value = depreciated * mileageFactor * CONDITIONS[condition][1] * between(0.92, 1.08);
+      const value = depreciated * mileageFactor * PRIMARY_DAMAGE[primaryDamage][1]
+        * CONDITION_VALUE[condition] * between(0.92, 1.08);
       vehicles.push({
         year,
         make,
         model,
+        primaryDamage,
         condition,
         location: pick(LOCATIONS),
         saleDate: pick(dates),

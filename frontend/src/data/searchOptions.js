@@ -1,12 +1,13 @@
 // Choices offered in the search form. Also used to validate values read from the URL.
 
+// Auction values are mostly under $20,000, so the low end gets finer steps.
 export const priceRanges = [
-  { value: "0-10000", label: "$0–$10,000" },
-  { value: "10000-20000", label: "$10,000–$20,000" },
+  { value: "0-5000", label: "Under $5,000" },
+  { value: "5000-10000", label: "$5,000–$10,000" },
+  { value: "10000-15000", label: "$10,000–$15,000" },
+  { value: "15000-20000", label: "$15,000–$20,000" },
   { value: "20000-30000", label: "$20,000–$30,000" },
-  { value: "30000-40000", label: "$30,000–$40,000" },
-  { value: "40000-50000", label: "$40,000–$50,000" },
-  { value: "50000-", label: "$50,000+" },
+  { value: "30000-", label: "$30,000+" },
 ];
 
 export const sortOptions = [
@@ -24,12 +25,17 @@ export const sortOptions = [
 
 export const pageSizes = [12, 24, 48, 96];
 
-// "up-to-20000" comes from AI search; the rest are the ranges above ("50000-" has no upper bound).
+// "up-to-20000" comes from AI search; the rest are the ranges above ("30000-" has no upper bound).
 export function getPriceBounds(priceRange) {
   if (!priceRange) return {};
   if (priceRange.startsWith("up-to-")) return { maxPriceInclusive: Number(priceRange.slice(6)) };
   const [minPrice, maxPrice] = priceRange.split("-").map((part) => (part === "" ? undefined : Number(part)));
   return { minPrice, maxPrice };
+}
+
+export function priceRangeLabel(priceRange) {
+  if (priceRange.startsWith("up-to-")) return `Up to $${Number(priceRange.slice(6)).toLocaleString("en-US")}`;
+  return priceRanges.find((range) => range.value === priceRange)?.label ?? priceRange;
 }
 
 export function isKnownPriceRange(priceRange) {
