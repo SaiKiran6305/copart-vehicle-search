@@ -9,6 +9,7 @@ export async function searchVehicles(criteria, signal) {
     "maxYear",
     "minPrice",
     "maxPrice",
+    "maxPriceInclusive",
     "page",
     "size",
     "sortBy",
@@ -31,5 +32,19 @@ export async function searchVehicles(criteria, signal) {
     );
   }
 
+  return response.json();
+}
+
+export async function interpretVehicleSearch(query, clarification = "") {
+  const response = await fetch("/api/ai-search", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ query, clarification }),
+  });
+  if (!response.ok) {
+    throw new Error(response.status === 503
+      ? "AI search is not configured on the server yet."
+      : "AI search could not complete. Please try again.");
+  }
   return response.json();
 }
