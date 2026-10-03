@@ -10,6 +10,7 @@ import {
   validateYearRange,
 } from "./data/searchState.js";
 import SearchForm from "./components/SearchForm.jsx";
+import SearchControls from "./components/SearchControls.jsx";
 import VehicleResults from "./components/VehicleResults.jsx";
 
 const emptyResult = {
@@ -59,11 +60,13 @@ export default function App() {
   const [favoriteIds, setFavoriteIds] = useState(readSavedVehicleIds);
   const [showStickySearch, setShowStickySearch] = useState(false);
   const [filtersOpen, setFiltersOpen] = useState(false);
-  const [aiQuery, setAiQuery] = useState("");
   const [aiClarification, setAiClarification] = useState("");
   const [aiQuestion, setAiQuestion] = useState("");
+  const [pendingAiQuery, setPendingAiQuery] = useState("");
+  const [aiChips, setAiChips] = useState([]);
   const [aiError, setAiError] = useState("");
   const [isAiLoading, setIsAiLoading] = useState(false);
+  const aiRequestVersion = useRef(0);
 
   useEffect(() => {
     try {
@@ -150,9 +153,16 @@ export default function App() {
     const showSearchFromUrl = () => {
       const { filters: urlFilters, criteria: urlCriteria } = readSearchFromUrl(window.location.search);
       criteriaFromUrl.current = true;
+      aiRequestVersion.current += 1;
       setFilters(urlFilters);
       setValidationError("");
       setError("");
+      setAiQuestion("");
+      setPendingAiQuery("");
+      setAiClarification("");
+      setAiChips([]);
+      setAiError("");
+      setIsAiLoading(false);
       setCriteria(urlCriteria);
     };
     window.addEventListener("popstate", showSearchFromUrl);
@@ -171,27 +181,48 @@ export default function App() {
     setFilters(nextFilters);
     setValidationError("");
     setAiQuestion("");
+    setPendingAiQuery("");
     setAiClarification("");
     setAiError("");
+    const chips = [];
+    if (interpreted.make && interpreted.model) chips.push(`${interpreted.make} ${interpreted.model}`);
+    else if (interpreted.make || interpreted.model) chips.push(interpreted.make || interpreted.model);
+    if (interpreted.primaryDamage) chips.push(`Damage: ${interpreted.primaryDamage}`);
+    if (interpreted.condition) chips.push(`Condition: ${interpreted.condition}`);
+    if (interpreted.minYear != null || interpreted.maxYear != null) {
+      chips.push(`${interpreted.minYear ?? "Any"}–${interpreted.maxYear ?? "Any"}`);
+    }
+    if (interpreted.maxPriceInclusive != null) {
+      chips.push(`Up to ${new Intl.NumberFormat("en-US", {
+        style: "currency", currency: "USD", maximumFractionDigits: 0,
+      }).format(interpreted.maxPriceInclusive)}`);
+    }
+    setAiChips(chips);
     setCriteria({ ...nextFilters, ...getPriceBounds(nextFilters.priceRange), page: 0, size: Number(nextFilters.size) });
   };
 
-  const runAiSearch = async (clarification = "") => {
-    if (!aiQuery.trim()) { setAiError("Enter a vehicle search description first."); return; }
+  const runAiSearch = async () => {
+    const clarification = aiQuestion ? aiClarification.trim() : "";
+    const query = aiQuestion ? pendingAiQuery : filters.q.trim();
+    if (!query) { setAiError("Enter a vehicle search description first."); return; }
+    if (aiQuestion && !clarification) return;
+    const requestVersion = ++aiRequestVersion.current;
     setIsAiLoading(true);
     setAiError("");
     try {
-      const response = await interpretVehicleSearch(aiQuery.trim(), clarification);
+      const response = await interpretVehicleSearch(query, clarification);
+      if (requestVersion !== aiRequestVersion.current) return;
       if (response.status === "CLARIFICATION") {
+        setPendingAiQuery(query);
         setAiQuestion(response.question || "Could you clarify what you mean?");
         setAiClarification("");
       } else {
         applyAiFilters(response.filters || {});
       }
     } catch (requestError) {
-      setAiError(requestError.message);
+      if (requestVersion === aiRequestVersion.current) setAiError(requestError.message);
     } finally {
-      setIsAiLoading(false);
+      if (requestVersion === aiRequestVersion.current) setIsAiLoading(false);
     }
   };
 
@@ -214,6 +245,9 @@ export default function App() {
 
   const handleFilterChange = (event) => {
     const { name, value } = event.target;
+    aiRequestVersion.current += 1;
+    setIsAiLoading(false);
+    if (name !== "q") setAiChips([]);
     const nextFilters = {
       ...filters,
       [name]: value,
@@ -228,6 +262,7 @@ export default function App() {
     setFilters(nextFilters);
     setValidationError("");
     setError("");
+    setAiError("");
 
     // Clearing the last filter restores the default results (keeping the chosen sort and page size),
     // and dropdowns apply immediately together with any text or years already typed.
@@ -238,7 +273,31 @@ export default function App() {
 
   const handleSubmit = (event) => {
     event.preventDefault();
+    aiRequestVersion.current += 1;
+    setIsAiLoading(false);
+    setAiError("");
+    if (aiQuestion) {
+      const nextFilters = { ...filters, q: pendingAiQuery };
+      setAiQuestion("");
+      setPendingAiQuery("");
+      setAiClarification("");
+      setAiChips([]);
+      applyFilters(nextFilters);
+      return;
+    }
     applyFilters(filters);
+  };
+
+  const handleSearchTextChange = (event) => {
+    aiRequestVersion.current += 1;
+    setIsAiLoading(false);
+    setAiError("");
+    if (aiQuestion) {
+      setAiClarification(event.target.value);
+      setAiError("");
+      return;
+    }
+    handleFilterChange(event);
   };
 
   // Remove filters suggested for a sparse result, starting from the search that is applied now.
@@ -250,15 +309,19 @@ export default function App() {
     for (const field of fields) nextFilters[field] = "";
     setFilters(nextFilters);
     setError("");
+    setAiChips([]);
     applyFilters(nextFilters);
   };
 
   const handleClear = () => {
+    aiRequestVersion.current += 1;
+    setIsAiLoading(false);
     setFilters(initialFilters);
     setValidationError("");
-    setAiQuery("");
     setAiQuestion("");
+    setPendingAiQuery("");
     setAiClarification("");
+    setAiChips([]);
     setAiError("");
     setCriteria({ ...initialCriteria });
   };
@@ -297,6 +360,8 @@ export default function App() {
     scrollToElement(".search-panel");
   };
 
+  const searchValue = aiQuestion ? aiClarification : filters.q;
+
   const activeFilterCount = ["make", "model", "primaryDamage", "condition", "priceRange"]
     .filter((field) => filters[field]).length + (filters.minYear || filters.maxYear ? 1 : 0);
 
@@ -331,7 +396,9 @@ export default function App() {
         <div className="content-wrap">
           <SearchForm
             filters={filters}
+            searchValue={searchValue}
             onChange={handleFilterChange}
+            onSearchTextChange={handleSearchTextChange}
             onSubmit={handleSubmit}
             onClear={handleClear}
             isLoading={isLoading}
@@ -339,34 +406,27 @@ export default function App() {
             filtersOpen={filtersOpen || Boolean(validationError)}
             onToggleFilters={() => setFiltersOpen((open) => !open)}
             activeFilterCount={activeFilterCount}
-            aiQuery={aiQuery}
-            onAiQueryChange={(event) => setAiQuery(event.target.value)}
             aiQuestion={aiQuestion}
-            aiClarification={aiClarification}
-            onAiClarificationChange={(event) => setAiClarification(event.target.value)}
+            aiOriginalQuery={pendingAiQuery}
+            aiChips={aiChips}
             aiError={aiError}
             isAiLoading={isAiLoading}
-            onAiSearch={() => runAiSearch()}
-            onAiClarify={() => runAiSearch(aiClarification)}
+            isClarifying={Boolean(aiQuestion)}
+            onAiSearch={runAiSearch}
           />
           {showStickySearch && (
             <div className="sticky-search" role="region" aria-label="Quick vehicle search">
               <form className="sticky-search__form" onSubmit={handleSubmit}>
-                <label className="search-field" htmlFor="sticky-query">
-                  <span className="search-field__icon" aria-hidden="true">⌕</span>
-                  <span className="sr-only">Search by vehicle, lot, or location</span>
-                  <input
-                    id="sticky-query"
-                    name="q"
-                    type="search"
-                    placeholder="Search make, model, lot number, or location"
-                    value={filters.q}
-                    onChange={handleFilterChange}
-                  />
-                </label>
-                <button className="button button--secondary" type="button" onClick={showFilters}>
-                  Filters
-                </button>
+                <SearchControls
+                  idPrefix="sticky"
+                  value={searchValue}
+                  onChange={handleSearchTextChange}
+                  isClarifying={Boolean(aiQuestion)}
+                  isAiLoading={isAiLoading}
+                  isLoading={isLoading}
+                  onAskAi={runAiSearch}
+                  onShowFilters={showFilters}
+                />
               </form>
             </div>
           )}

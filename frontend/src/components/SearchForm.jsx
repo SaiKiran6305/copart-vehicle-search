@@ -1,12 +1,11 @@
 import FilterPanel from "./FilterPanel.jsx";
-
-function Spinner() {
-  return <span className="spinner spinner--small" aria-hidden="true" />;
-}
+import SearchControls from "./SearchControls.jsx";
 
 export default function SearchForm({
   filters,
+  searchValue,
   onChange,
+  onSearchTextChange,
   onSubmit,
   onClear,
   isLoading,
@@ -14,94 +13,39 @@ export default function SearchForm({
   filtersOpen,
   onToggleFilters,
   activeFilterCount,
-  aiQuery, onAiQueryChange, aiQuestion, aiClarification, onAiClarificationChange,
-  aiError, isAiLoading, onAiSearch, onAiClarify,
+  aiQuestion,
+  aiOriginalQuery,
+  aiChips,
+  aiError,
+  isAiLoading,
+  isClarifying,
+  onAiSearch,
 }) {
   return (
     <form className={`search-panel${filtersOpen ? " filters-open" : ""}`} onSubmit={onSubmit} noValidate>
-      <div className="ai-search" aria-busy={isAiLoading}>
-        <div className="ai-search__intro">
-          <span className="ai-search__spark" aria-hidden="true">✦</span>
-          <label htmlFor="ai-query">Search with AI</label>
+      <SearchControls
+        idPrefix="main"
+        value={searchValue}
+        onChange={onSearchTextChange}
+        isClarifying={isClarifying}
+        isAiLoading={isAiLoading}
+        isLoading={isLoading}
+        onAskAi={onAiSearch}
+      />
+
+      {aiQuestion && (
+        <div className="ai-followup" role="status">
+          <p>{aiQuestion}</p>
+          <span>Original request: “{aiOriginalQuery}”</span>
         </div>
-        <div className="ai-search__controls">
-          <input
-            id="ai-query"
-            type="text"
-            value={aiQuery}
-            onChange={onAiQueryChange}
-            placeholder="e.g. Toyota under $20,000 near Dallas"
-            maxLength={300}
-            onKeyDown={(event) => {
-              if (event.key === "Enter") {
-                event.preventDefault();
-                onAiSearch();
-              }
-            }}
-          />
-          <button className="button button--ai" type="button" onClick={onAiSearch} disabled={isAiLoading}>
-            {isAiLoading && <Spinner />}
-            {isAiLoading ? "Searching…" : "Search with AI"}
-          </button>
+      )}
+      {aiChips.length > 0 && (
+        <div className="ai-interpretation" aria-label="AI interpreted filters">
+          <span className="ai-interpretation__label"><span aria-hidden="true">✨</span> AI interpreted</span>
+          {aiChips.map((chip) => <span className="ai-chip" key={chip}>{chip}</span>)}
         </div>
-        {aiQuestion && (
-          <div className="ai-search__clarification">
-            <p role="status">{aiQuestion}</p>
-            <div className="ai-search__controls">
-              <label className="sr-only" htmlFor="ai-clarification">Your clarification</label>
-              <input
-                id="ai-clarification"
-                type="text"
-                value={aiClarification}
-                onChange={onAiClarificationChange}
-                placeholder="Type your clarification"
-                maxLength={300}
-                onKeyDown={(event) => {
-                  if (event.key === "Enter") {
-                    event.preventDefault();
-                    onAiClarify();
-                  }
-                }}
-              />
-              <button
-                className="button button--secondary"
-                type="button"
-                onClick={onAiClarify}
-                disabled={isAiLoading || !aiClarification.trim()}
-              >
-                {isAiLoading && <Spinner />}
-                {isAiLoading ? "Checking…" : "Continue"}
-              </button>
-            </div>
-          </div>
-        )}
-        {aiError && <p className="ai-search__error" role="alert">{aiError}</p>}
-      </div>
-      <div className="search-panel__top-row">
-        <label className="search-field" htmlFor="query">
-          <span className="sr-only">Search by vehicle, lot, or location</span>
-          <span className="search-field__icon" aria-hidden="true">
-            ⌕
-          </span>
-          <input
-            id="query"
-            name="q"
-            type="search"
-            placeholder="Search make, model, lot number, or location"
-            value={filters.q}
-            onChange={onChange}
-          />
-        </label>
-        <div className="search-actions">
-          <button className="button button--primary" type="submit" disabled={isLoading}>
-            <span aria-hidden="true">⌕</span>
-            {isLoading ? "Searching…" : "Search vehicles"}
-          </button>
-          <button className="button button--text" type="button" onClick={onClear}>
-            Clear filters
-          </button>
-        </div>
-      </div>
+      )}
+      {aiError && <p className="ai-search__error" role="alert">{aiError}</p>}
 
       <button
         className="button button--secondary filters-toggle"
@@ -121,11 +65,12 @@ export default function SearchForm({
 
       <FilterPanel filters={filters} onChange={onChange} />
 
-      {validationError && (
-        <p className="form-error" role="alert">
-          {validationError}
-        </p>
-      )}
+      <div className="search-panel__footer">
+        {validationError && <p className="form-error" role="alert">{validationError}</p>}
+        <button className="button button--text" type="button" onClick={onClear}>
+          Clear filters
+        </button>
+      </div>
     </form>
   );
 }

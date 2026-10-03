@@ -132,6 +132,21 @@ describe("vehicle search interactions", () => {
     );
   });
 
+  it("uses Enter for keyword search and never calls AI implicitly", async () => {
+    const user = userEvent.setup();
+    render(<App />);
+    await screen.findByRole("heading", { name: "300 vehicles" });
+
+    const search = screen.getByRole("searchbox", { name: /search by vehicle/i });
+    await user.type(search, "Honda{Enter}");
+
+    await waitFor(() => expect(global.fetch).toHaveBeenLastCalledWith(
+      expect.stringContaining("q=Honda"),
+      expect.any(Object),
+    ));
+    expect(global.fetch.mock.calls.some(([url]) => url === "/api/ai-search")).toBe(false);
+  });
+
   it("restores default results as soon as the last text filter is cleared", async () => {
     const user = userEvent.setup();
     render(<App />);
@@ -192,8 +207,8 @@ describe("vehicle search interactions", () => {
     });
     render(<App />);
     await screen.findByRole("heading", { name: "300 vehicles" });
-    await user.type(screen.getByLabelText("Search with AI"), "Toyota under $20,000 near Dallas");
-    await user.click(screen.getByRole("button", { name: "Search with AI" }));
+    await user.type(screen.getByRole("searchbox", { name: /search by vehicle/i }), "Toyota under $20,000 near Dallas");
+    await user.click(screen.getByRole("button", { name: "Ask AI" }));
 
     await waitFor(() => {
       const searchCall = calls.findLast((call) => call.url.startsWith("/api/vehicles?"));
@@ -206,6 +221,11 @@ describe("vehicle search interactions", () => {
     expect(screen.getByRole("searchbox", { name: /search by vehicle/i })).toHaveValue("Dallas");
     expect(screen.getByLabelText("Make")).toHaveValue("Toyota");
     expect(screen.getByLabelText("Estimated value")).toHaveValue("up-to-20000");
+    expect(screen.getByLabelText("AI interpreted filters")).toHaveTextContent("Toyota");
+    expect(screen.getByLabelText("AI interpreted filters")).toHaveTextContent("Up to $20,000");
+    await user.click(screen.getByRole("button", { name: "Clear filters" }));
+    expect(screen.getByRole("searchbox", { name: /search by vehicle/i })).toHaveValue("");
+    expect(screen.queryByLabelText("AI interpreted filters")).not.toBeInTheDocument();
   });
 
   it("sends an answer to an AI clarification with the original request", async () => {
@@ -226,15 +246,17 @@ describe("vehicle search interactions", () => {
     });
     render(<App />);
     await screen.findByRole("heading", { name: "300 vehicles" });
-    await user.type(screen.getByLabelText("Search with AI"), "Toyota under 20");
-    await user.click(screen.getByRole("button", { name: "Search with AI" }));
+    await user.type(screen.getByRole("searchbox", { name: /search by vehicle/i }), "Toyota under 20");
+    await user.click(screen.getByRole("button", { name: "Ask AI" }));
     expect(await screen.findByText("Do you mean under $20,000?")).toBeInTheDocument();
-    await user.type(screen.getByLabelText("Your clarification"), "Yes, $20,000");
-    await user.click(screen.getByRole("button", { name: "Continue" }));
+    const search = screen.getByRole("searchbox", { name: "Answer the AI question" });
+    await user.type(search, "Yes, $20,000");
+    await user.click(screen.getByRole("button", { name: "Ask AI with clarification" }));
 
     await waitFor(() => expect(aiCalls).toHaveLength(2));
     expect(aiCalls[1]).toEqual({ query: "Toyota under 20", clarification: "Yes, $20,000" });
     expect(await screen.findByLabelText("Make")).toHaveValue("Toyota");
+    expect(screen.getByRole("searchbox", { name: /search by vehicle/i })).toHaveValue("");
   });
 
   it("keeps a saved vehicle after the app is rendered again", async () => {
