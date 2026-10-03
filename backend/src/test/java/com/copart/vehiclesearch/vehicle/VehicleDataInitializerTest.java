@@ -31,7 +31,7 @@ class VehicleDataInitializerTest {
 
         seedVehicles.run();
 
-        assertEquals(300, repository.count());
+        assertEquals(1000, repository.count());
         assertTrue(repository.findAll().stream().noneMatch(vehicle -> vehicle.getLotNumber().equals("LOT-OLD")));
     }
 
@@ -43,7 +43,7 @@ class VehicleDataInitializerTest {
         seedVehicles.run();
 
         List<Long> idsAfter = repository.findAll().stream().map(Vehicle::getId).sorted().toList();
-        assertEquals(300, idsAfter.size());
+        assertEquals(1000, idsAfter.size());
         assertEquals(idsBefore, idsAfter);
     }
 }

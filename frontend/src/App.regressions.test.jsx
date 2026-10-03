@@ -247,7 +247,8 @@ describe("search state regressions", () => {
     expect(card).toHaveTextContent("ConditionRun and Drive");
     expect(screen.getByRole("img", { name: "2020 Toyota Camry" })).toBeInTheDocument();
     expect(card).not.toHaveTextContent("Representative photo");
-    expect(card.querySelector("img")).toHaveAttribute("src", "/vehicles/blue-sedan.webp");
+    // A Camry gets one of the sedan photos (which one depends on the lot number).
+    expect(card.querySelector("img")).toHaveAttribute("src", expect.stringMatching(/^\/vehicles\/.*sedan.*\.webp$/));
     // The first card is in the first row, so its photo loads right away (see App.performance.test.jsx).
     expect(card.querySelector("img")).toHaveAttribute("loading", "eager");
   });
