@@ -174,6 +174,67 @@ describe("vehicle search interactions", () => {
     });
   });
 
+  it("uses the AI filters and automatically runs the existing vehicle search", async () => {
+    const user = userEvent.setup();
+    const calls = [];
+    global.fetch = vi.fn(async (url, options = {}) => {
+      calls.push({ url, options });
+      if (url === "/api/ai-search") {
+        return { ok: true, json: async () => ({
+          status: "READY",
+          filters: { q: "Dallas", make: "Toyota", model: null, condition: null,
+            minYear: null, maxYear: null, maxPriceInclusive: 20000 },
+        }) };
+      }
+      return { ok: true, json: async () => makePage() };
+    });
+    render(<App />);
+    await screen.findByRole("heading", { name: "300 vehicles" });
+    await user.type(screen.getByLabelText("Search with AI"), "Toyota under $20,000 near Dallas");
+    await user.click(screen.getByRole("button", { name: "Search with AI" }));
+
+    await waitFor(() => {
+      const searchCall = calls.findLast((call) => call.url.startsWith("/api/vehicles?"));
+      expect(searchCall).toBeDefined();
+      const params = new URL(searchCall.url, window.location.origin).searchParams;
+      expect(params.get("q")).toBe("Dallas");
+      expect(params.get("make")).toBe("Toyota");
+      expect(params.get("maxPriceInclusive")).toBe("20000");
+    });
+    expect(screen.getByRole("searchbox", { name: /search by vehicle/i })).toHaveValue("Dallas");
+    expect(screen.getByLabelText("Make")).toHaveValue("Toyota");
+    expect(screen.getByLabelText("Estimated value")).toHaveValue("up-to-20000");
+  });
+
+  it("sends an answer to an AI clarification with the original request", async () => {
+    const user = userEvent.setup();
+    const aiCalls = [];
+    global.fetch = vi.fn(async (url, options = {}) => {
+      if (url === "/api/ai-search") {
+        const request = JSON.parse(options.body);
+        aiCalls.push(request);
+        return aiCalls.length === 1
+          ? { ok: true, json: async () => ({ status: "CLARIFICATION", question: "Do you mean under $20,000?" }) }
+          : { ok: true, json: async () => ({ status: "READY", filters: {
+              q: null, make: "Toyota", model: null, condition: null,
+              minYear: null, maxYear: null, maxPriceInclusive: 20000,
+            } }) };
+      }
+      return { ok: true, json: async () => makePage() };
+    });
+    render(<App />);
+    await screen.findByRole("heading", { name: "300 vehicles" });
+    await user.type(screen.getByLabelText("Search with AI"), "Toyota under 20");
+    await user.click(screen.getByRole("button", { name: "Search with AI" }));
+    expect(await screen.findByText("Do you mean under $20,000?")).toBeInTheDocument();
+    await user.type(screen.getByLabelText("Your clarification"), "Yes, $20,000");
+    await user.click(screen.getByRole("button", { name: "Continue" }));
+
+    await waitFor(() => expect(aiCalls).toHaveLength(2));
+    expect(aiCalls[1]).toEqual({ query: "Toyota under 20", clarification: "Yes, $20,000" });
+    expect(await screen.findByLabelText("Make")).toHaveValue("Toyota");
+  });
+
   it("keeps a saved vehicle after the app is rendered again", async () => {
     const user = userEvent.setup();
     const firstRender = render(<App />);

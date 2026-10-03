@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { searchVehicles } from "./api/vehicles.js";
+import { interpretVehicleSearch, searchVehicles } from "./api/vehicles.js";
 import SearchForm from "./components/SearchForm.jsx";
 import VehicleResults from "./components/VehicleResults.jsx";
 
@@ -34,6 +34,13 @@ const emptyResult = {
 
 const savedVehiclesKey = "copart:saved-vehicle-ids:v1";
 
+function getPriceBounds(priceRange) {
+  if (priceRange.startsWith("up-to-")) return { maxPriceInclusive: Number(priceRange.slice(6)) };
+  if (!priceRange) return {};
+  const [minPrice, maxPrice] = priceRange.split("-").map(Number);
+  return { minPrice, maxPrice };
+}
+
 function readSavedVehicleIds() {
   try {
     const saved = JSON.parse(window.localStorage.getItem(savedVehiclesKey) || "[]");
@@ -53,6 +60,11 @@ export default function App() {
   const [requestVersion, setRequestVersion] = useState(0);
   const [favoriteIds, setFavoriteIds] = useState(readSavedVehicleIds);
   const [showStickySearch, setShowStickySearch] = useState(false);
+  const [aiQuery, setAiQuery] = useState("");
+  const [aiClarification, setAiClarification] = useState("");
+  const [aiQuestion, setAiQuestion] = useState("");
+  const [aiError, setAiError] = useState("");
+  const [isAiLoading, setIsAiLoading] = useState(false);
 
   useEffect(() => {
     try {
@@ -104,6 +116,41 @@ export default function App() {
     return () => controller.abort();
   }, [criteria, requestVersion]);
 
+  const applyAiFilters = (interpreted) => {
+    const nextFilters = {
+      ...filters, q: interpreted.q || "", make: interpreted.make || "",
+      model: interpreted.model || "", condition: interpreted.condition || "",
+      minYear: interpreted.minYear == null ? "" : String(interpreted.minYear),
+      maxYear: interpreted.maxYear == null ? "" : String(interpreted.maxYear),
+      priceRange: interpreted.maxPriceInclusive == null ? "" : "up-to-" + interpreted.maxPriceInclusive,
+    };
+    setFilters(nextFilters);
+    setValidationError("");
+    setAiQuestion("");
+    setAiClarification("");
+    setAiError("");
+    setCriteria({ ...nextFilters, ...getPriceBounds(nextFilters.priceRange), page: 0, size: Number(nextFilters.size) });
+  };
+
+  const runAiSearch = async (clarification = "") => {
+    if (!aiQuery.trim()) { setAiError("Enter a vehicle search description first."); return; }
+    setIsAiLoading(true);
+    setAiError("");
+    try {
+      const response = await interpretVehicleSearch(aiQuery.trim(), clarification);
+      if (response.status === "CLARIFICATION") {
+        setAiQuestion(response.question || "Could you clarify what you mean?");
+        setAiClarification("");
+      } else {
+        applyAiFilters(response.filters || {});
+      }
+    } catch (requestError) {
+      setAiError(requestError.message);
+    } finally {
+      setIsAiLoading(false);
+    }
+  };
+
   const handleFilterChange = (event) => {
     const { name, value } = event.target;
     const nextFilters = {
@@ -125,9 +172,7 @@ export default function App() {
     if (!hasSearchFilters && hadSubmittedSearch) {
       setCriteria({ ...initialCriteria });
     } else if (["make", "model", "condition", "priceRange"].includes(name)) {
-      const [minPrice, maxPrice] = nextFilters.priceRange
-        ? nextFilters.priceRange.split("-").map(Number)
-        : [undefined, undefined];
+      const priceBounds = getPriceBounds(nextFilters.priceRange);
 
       setCriteria((current) => ({
         ...current,
@@ -135,8 +180,10 @@ export default function App() {
         model: nextFilters.model,
         condition: nextFilters.condition,
         priceRange: nextFilters.priceRange,
-        minPrice,
-        maxPrice,
+        minPrice: undefined,
+        maxPrice: undefined,
+        maxPriceInclusive: undefined,
+        ...priceBounds,
         page: 0,
       }));
     }
@@ -160,16 +207,16 @@ export default function App() {
     }
 
     setValidationError("");
-    const [minPrice, maxPrice] = filters.priceRange
-      ? filters.priceRange.split("-").map(Number)
-      : [undefined, undefined];
+    const priceBounds = getPriceBounds(filters.priceRange);
 
     setCriteria({
       ...filters,
       minYear: minYear || undefined,
       maxYear: maxYear || undefined,
-      minPrice,
-      maxPrice,
+      minPrice: undefined,
+      maxPrice: undefined,
+      maxPriceInclusive: undefined,
+      ...priceBounds,
       page: 0,
       size: Number(filters.size),
     });
@@ -247,6 +294,15 @@ export default function App() {
             onClear={handleClear}
             isLoading={isLoading}
             validationError={validationError}
+            aiQuery={aiQuery}
+            onAiQueryChange={(event) => setAiQuery(event.target.value)}
+            aiQuestion={aiQuestion}
+            aiClarification={aiClarification}
+            onAiClarificationChange={(event) => setAiClarification(event.target.value)}
+            aiError={aiError}
+            isAiLoading={isAiLoading}
+            onAiSearch={() => runAiSearch()}
+            onAiClarify={() => runAiSearch(aiClarification)}
           />
           {showStickySearch && (
             <div className="sticky-search" role="region" aria-label="Quick vehicle search">

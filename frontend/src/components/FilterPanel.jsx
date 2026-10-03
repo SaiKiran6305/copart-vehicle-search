@@ -71,6 +71,7 @@ export default function FilterPanel({ filters, onChange }) {
           <option value="20000-30000">$20,000–$30,000</option>
           <option value="30000-40000">$30,000–$40,000</option>
           <option value="40000-50000">$40,000–$50,000</option>
+          {filters.priceRange.startsWith("up-to-") && <option value={filters.priceRange}>Up to ${Number(filters.priceRange.slice(6)).toLocaleString()}</option>}
         </select>
       </label>
 

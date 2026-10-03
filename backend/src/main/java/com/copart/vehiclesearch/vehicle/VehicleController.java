@@ -35,6 +35,7 @@ public class VehicleController {
             @RequestParam(required = false) Integer maxYear,
             @RequestParam(required = false) BigDecimal minPrice,
             @RequestParam(required = false) BigDecimal maxPrice,
+            @RequestParam(required = false) BigDecimal maxPriceInclusive,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "12") int size,
             @RequestParam(defaultValue = "saleDate") String sortBy,
@@ -48,7 +49,10 @@ public class VehicleController {
         }
         if ((minPrice != null && minPrice.signum() < 0)
                 || (maxPrice != null && maxPrice.signum() < 0)
-                || (minPrice != null && maxPrice != null && minPrice.compareTo(maxPrice) >= 0)) {
+                || (maxPriceInclusive != null && maxPriceInclusive.signum() < 0)
+                || (maxPrice != null && maxPriceInclusive != null)
+                || (minPrice != null && maxPrice != null && minPrice.compareTo(maxPrice) >= 0)
+                || (minPrice != null && maxPriceInclusive != null && minPrice.compareTo(maxPriceInclusive) > 0)) {
             return ResponseEntity.badRequest().build();
         }
 
@@ -62,6 +66,6 @@ public class VehicleController {
         Pageable pageable = PageRequest.of(page, size, Sort.by(sortDirection, sortBy));
 
         return ResponseEntity.ok(VehicleSearchResponse.from(vehicleService.search(
-                q, make, model, condition, minYear, maxYear, minPrice, maxPrice, pageable)));
+                q, make, model, condition, minYear, maxYear, minPrice, maxPrice, maxPriceInclusive, pageable)));
     }
 }

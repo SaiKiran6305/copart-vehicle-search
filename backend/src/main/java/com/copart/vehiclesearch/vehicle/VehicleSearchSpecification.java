@@ -16,7 +16,8 @@ public final class VehicleSearchSpecification {
 
     public static Specification<Vehicle> matches(String query, String make, String model,
                                                  String condition, Integer minYear, Integer maxYear,
-                                                 BigDecimal minPrice, BigDecimal maxPrice) {
+                                                 BigDecimal minPrice, BigDecimal maxPrice,
+                                                 BigDecimal maxPriceInclusive) {
         return (root, unusedQuery, criteriaBuilder) -> {
             List<Predicate> predicates = new ArrayList<>();
 
@@ -51,6 +52,9 @@ public final class VehicleSearchSpecification {
             }
             if (maxPrice != null) {
                 predicates.add(criteriaBuilder.lessThan(root.get("estimatedValue"), maxPrice));
+            }
+            if (maxPriceInclusive != null) {
+                predicates.add(criteriaBuilder.lessThanOrEqualTo(root.get("estimatedValue"), maxPriceInclusive));
             }
 
             return criteriaBuilder.and(predicates.toArray(Predicate[]::new));
