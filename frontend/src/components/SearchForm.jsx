@@ -67,7 +67,7 @@ export default function SearchForm({
               className="quick-search"
               type="button"
               aria-pressed={activeQuickSearch === label}
-              onClick={() => onQuickSearch(preset)}
+              onClick={() => onQuickSearch(preset, activeQuickSearch === label)}
             >
               {label}
             </button>
