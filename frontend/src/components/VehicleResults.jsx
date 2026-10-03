@@ -2,6 +2,7 @@ import VehicleCard from "./VehicleCard.jsx";
 import Pagination from "./Pagination.jsx";
 import LoadingState from "./LoadingState.jsx";
 import ErrorMessage from "./ErrorMessage.jsx";
+import { sortOptions } from "../data/searchOptions.js";
 
 export default function VehicleResults({
   result,
@@ -86,16 +87,9 @@ export default function VehicleResults({
                 onSortChange({ sortBy, direction });
               }}
             >
-              <option value="saleDate:asc">Sale date: Earliest first</option>
-              <option value="saleDate:desc">Sale date: Latest first</option>
-              <option value="year:desc">Year: Newest first</option>
-              <option value="year:asc">Year: Oldest first</option>
-              <option value="estimatedValue:asc">Value: Low to high</option>
-              <option value="estimatedValue:desc">Value: High to low</option>
-              <option value="odometer:asc">Odometer: Low to high</option>
-              <option value="odometer:desc">Odometer: High to low</option>
-              <option value="make:asc">Make: A to Z</option>
-              <option value="make:desc">Make: Z to A</option>
+              {sortOptions.map((option) => (
+                <option key={option.value} value={option.value}>{option.label}</option>
+              ))}
             </select>
           </label>
         </div>

@@ -28,7 +28,7 @@ cd backend
 mvn spring-boot:run
 ```
 
-The backend listens on port 8080 during local development. When the database is empty, it seeds 300 synthetic vehicle records from `backend/src/main/resources/vehicles.json`. In another terminal, start the React development server:
+The backend listens on port 8080 during local development. On startup it loads 300 synthetic vehicle records from `backend/src/main/resources/vehicles.json`. In another terminal, start the React development server:
 
 ```sh
 cd frontend
@@ -61,7 +61,7 @@ After connecting the GitHub repository to a Railway service, use the repository 
 
 ## Frontend
 
-The responsive search interface uses the backend API for vehicle data. It includes free-text search, make/model/condition, estimated-value and year filters, combined sort choices, configurable page size, paginated card results, and loading, validation, error, and empty-result states. Make and model options are linked. Dropdown filters apply immediately together with any text or years already typed; text and year changes apply on Search or Enter. While a new page loads, the current cards stay visible (dimmed) so the page does not jump. Each card shows an illustrative photo chosen by the model's body style and a colour-coded condition badge. Saved vehicle hearts persist in local storage and sync across tabs in the same browser profile; they are not shared between separate profiles or devices. Vehicle cards use four columns on wide screens, three on smaller desktop widths, two on tablets, and one on narrow phones.
+The responsive search interface uses the backend API for vehicle data. It includes free-text search, make/model/condition, estimated-value and year filters, combined sort choices, configurable page size, paginated card results, and loading, validation, error, and empty-result states. Make and model options are linked. Dropdown filters apply immediately together with any text or years already typed; text and year changes apply on Search or Enter. While a new page loads, the current cards stay visible (dimmed) so the page does not jump. Each card shows an illustrative photo chosen by the model's body style and a colour-coded condition badge. The applied search (filters, sort, page size, and page) is kept in the URL, for example `/?make=Toyota&condition=Hail&sortBy=estimatedValue&direction=desc&page=2`, so a refresh keeps the results, Back and Forward step through searches, and links can be shared. Unknown values in a link are ignored. Saved vehicle hearts persist in local storage and sync across tabs in the same browser profile; they are not shared between separate profiles or devices. Vehicle cards use four columns on wide screens, three on smaller desktop widths, two on tablets, and one on narrow phones.
 
 The frontend is a Vite app for local development and is bundled into the Spring Boot application by the root Dockerfile for deployment.
 
@@ -71,7 +71,9 @@ Local development uses a persistent file-based H2 database at `jdbc:h2:file:./da
 
 Tests override this configuration to use an in-memory H2 database and recreate its schema for each test run.
 
-The supplied dataset is packaged at `backend/src/main/resources/vehicles.json` so it is included in backend builds. Seeding is skipped whenever the database already contains vehicles. If you already ran an earlier version with the 12-record seed, its persistent database will keep those records; back up and reset that local database before starting if you want the new 300-record dataset loaded. Tests use a fresh in-memory database and verify the 300-record seed.
+The dataset is packaged at `backend/src/main/resources/vehicles.json` so it is included in backend builds. On startup the stored vehicles are compared with the file: if they already match, nothing changes; otherwise they are replaced with the file's contents, so a regenerated file always takes effect. Tests use a fresh in-memory database and verify the 300-record seed.
+
+The file is produced by `node scripts/generate-vehicles.mjs` (fixed random seed, so re-running gives the same data). Each of the 30 models has 10 lots with a random year (2016–2025), condition, and location. Mileage grows with age, and the estimated value comes from the model's approximate new price, depreciation by age, mileage, and damage. Lot numbers follow the weekday sale calendar.
 
 ## API
 
@@ -102,7 +104,7 @@ Supported query parameters:
 | `model` | Case-insensitive exact model filter |
 | `condition` | Case-insensitive exact condition filter |
 | `minYear`, `maxYear` | Inclusive year range |
-| `minPrice`, `maxPrice` | Estimated value range; `minPrice` is inclusive and `maxPrice` is exclusive, so `$10,000–$20,000` buckets don't overlap |
+| `minPrice`, `maxPrice` | Estimated value range; `minPrice` is inclusive and `maxPrice` is exclusive, so `$10,000–$20,000` buckets don't overlap. Either can be omitted (the UI's `$50,000+` sends only `minPrice`) |
 | `page` | Zero-based page number; defaults to `0` |
 | `size` | Page size from 1 through 100; defaults to `12` |
 | `sortBy` | One of `year`, `make`, `model`, `saleDate`, `estimatedValue`, or `odometer`; defaults to `saleDate`. Ties are broken by id so paging is stable |

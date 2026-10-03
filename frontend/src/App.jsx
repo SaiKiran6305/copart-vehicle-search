@@ -1,26 +1,16 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { interpretVehicleSearch, searchVehicles } from "./api/vehicles.js";
+import { getPriceBounds } from "./data/searchOptions.js";
+import {
+  initialCriteria,
+  initialFilters,
+  readSearchFromUrl,
+  searchToQueryString,
+  toCriteria,
+  validateYearRange,
+} from "./data/searchState.js";
 import SearchForm from "./components/SearchForm.jsx";
 import VehicleResults from "./components/VehicleResults.jsx";
-
-const initialFilters = {
-  q: "",
-  make: "",
-  model: "",
-  condition: "",
-  minYear: "",
-  maxYear: "",
-  priceRange: "",
-  sortBy: "saleDate",
-  direction: "asc",
-  size: "12",
-};
-
-const initialCriteria = {
-  ...initialFilters,
-  page: 0,
-  size: 12,
-};
 
 const emptyResult = {
   content: [],
@@ -34,27 +24,8 @@ const emptyResult = {
 
 const savedVehiclesKey = "copart:saved-vehicle-ids:v1";
 
-function getPriceBounds(priceRange) {
-  if (priceRange.startsWith("up-to-")) return { maxPriceInclusive: Number(priceRange.slice(6)) };
-  if (!priceRange) return {};
-  const [minPrice, maxPrice] = priceRange.split("-").map(Number);
-  return { minPrice, maxPrice };
-}
-
 const searchableFields = ["q", "make", "model", "condition", "minYear", "maxYear", "priceRange"];
 const instantFields = ["make", "model", "condition", "priceRange"];
-
-function validateYearRange(minYear, maxYear) {
-  if (minYear && maxYear && Number(minYear) > Number(maxYear)) {
-    return "Minimum year must be less than or equal to maximum year.";
-  }
-  for (const year of [minYear, maxYear]) {
-    if (year && (!Number.isInteger(Number(year)) || Number(year) < 1886 || Number(year) > 2100)) {
-      return "Enter a year between 1886 and 2100.";
-    }
-  }
-  return "";
-}
 
 function scrollToElement(selector) {
   const element = document.querySelector(selector);
@@ -73,8 +44,13 @@ function readSavedVehicleIds() {
 }
 
 export default function App() {
-  const [filters, setFilters] = useState(initialFilters);
-  const [criteria, setCriteria] = useState(initialCriteria);
+  // The search in the URL (if any) decides the first results, so refreshed or shared links work.
+  const [searchFromUrl] = useState(() => readSearchFromUrl(window.location.search));
+  const [filters, setFilters] = useState(searchFromUrl.filters);
+  const [criteria, setCriteria] = useState(searchFromUrl.criteria);
+  // True when the next criteria change came from the URL itself (first load or Back/Forward),
+  // so the URL is normalised in place instead of adding a history entry.
+  const criteriaFromUrl = useRef(true);
   const [result, setResult] = useState(emptyResult);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
@@ -138,6 +114,36 @@ export default function App() {
     return () => controller.abort();
   }, [criteria, requestVersion]);
 
+  // Keep the address bar in step with the applied search; each new search or page is a history entry.
+  useEffect(() => {
+    const query = searchToQueryString(criteria);
+    if (query === window.location.search) {
+      criteriaFromUrl.current = false;
+      return;
+    }
+    const url = `${window.location.pathname}${query}${window.location.hash}`;
+    if (criteriaFromUrl.current) {
+      window.history.replaceState(window.history.state, "", url);
+    } else {
+      window.history.pushState(null, "", url);
+    }
+    criteriaFromUrl.current = false;
+  }, [criteria]);
+
+  // Back/Forward: show the search stored in that history entry.
+  useEffect(() => {
+    const showSearchFromUrl = () => {
+      const { filters: urlFilters, criteria: urlCriteria } = readSearchFromUrl(window.location.search);
+      criteriaFromUrl.current = true;
+      setFilters(urlFilters);
+      setValidationError("");
+      setError("");
+      setCriteria(urlCriteria);
+    };
+    window.addEventListener("popstate", showSearchFromUrl);
+    return () => window.removeEventListener("popstate", showSearchFromUrl);
+  }, []);
+
   const applyAiFilters = (interpreted) => {
     const nextFilters = {
       ...filters, q: interpreted.q || "", make: interpreted.make || "",
@@ -186,17 +192,7 @@ export default function App() {
     }
 
     setValidationError("");
-    setCriteria({
-      ...formFilters,
-      minYear: minYear || undefined,
-      maxYear: maxYear || undefined,
-      minPrice: undefined,
-      maxPrice: undefined,
-      maxPriceInclusive: undefined,
-      ...getPriceBounds(formFilters.priceRange),
-      page: 0,
-      size: Number(formFilters.size),
-    });
+    setCriteria(toCriteria(formFilters));
     return true;
   };
 

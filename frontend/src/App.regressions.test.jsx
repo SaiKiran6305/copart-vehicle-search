@@ -34,6 +34,7 @@ const requestParams = (call = -1) =>
   new URL(global.fetch.mock.calls.at(call)[0], window.location.origin).searchParams;
 
 beforeEach(() => {
+  window.history.replaceState(null, "", "/");
   window.localStorage.clear();
   global.fetch = vi.fn(async (url) => {
     const params = new URL(url, window.location.origin).searchParams;
@@ -196,6 +197,17 @@ describe("search state regressions", () => {
 
     expect(await screen.findByText("Too many AI searches. Please wait 42 seconds and try again."))
       .toBeInTheDocument();
+  });
+
+  it("searches $50,000+ with only a lower bound", async () => {
+    const user = userEvent.setup();
+    render(<App />);
+    await screen.findByRole("heading", { name: "300 vehicles" });
+
+    await user.selectOptions(screen.getByLabelText("Estimated value"), "50000-");
+
+    await waitFor(() => expect(requestParams().get("minPrice")).toBe("50000"));
+    expect(requestParams().get("maxPrice")).toBeNull();
   });
 
   it("colour-codes the condition and shows the model's body style image", async () => {
