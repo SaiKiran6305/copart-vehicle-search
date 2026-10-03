@@ -248,6 +248,7 @@ describe("search state regressions", () => {
     expect(screen.getByRole("img", { name: "2020 Toyota Camry" })).toBeInTheDocument();
     expect(card).not.toHaveTextContent("Representative photo");
     expect(card.querySelector("img")).toHaveAttribute("src", "/vehicles/blue-sedan.webp");
-    expect(card.querySelector("img")).toHaveAttribute("loading", "lazy");
+    // The first card is in the first row, so its photo loads right away (see App.performance.test.jsx).
+    expect(card.querySelector("img")).toHaveAttribute("loading", "eager");
   });
 });

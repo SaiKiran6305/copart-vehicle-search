@@ -9,6 +9,14 @@
     />
     <title>Copart Vehicle Search</title>
     <link rel="icon" type="image/svg+xml" href="/copart-logo.svg" />
+    <script>
+      // Start loading the default first page of results while the app's code downloads.
+      // src/api/vehicles.js uses this response for the app's first search if it asks for the same URL.
+      if (!location.search) {
+        const url = "/api/vehicles?page=0&size=12&sortBy=saleDate&direction=asc";
+        window.__initialVehicleSearch = { url, response: fetch(url).catch(() => null) };
+      }
+    </script>
   </head>
   <body>
     <div id="root"></div>

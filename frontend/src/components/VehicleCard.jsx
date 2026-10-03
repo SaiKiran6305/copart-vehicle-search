@@ -19,20 +19,22 @@ function formatDate(value) {
   return value ? date.format(new Date(`${value}T00:00:00Z`)) : "—";
 }
 
-export default function VehicleCard({ vehicle, isFavorite, onFavoriteToggle }) {
+export default function VehicleCard({ vehicle, isAboveTheFold = false, isFavorite, onFavoriteToggle }) {
   const image = getVehicleImage(vehicle);
   const name = `${vehicle.year} ${vehicle.make} ${vehicle.model}`;
 
   return (
     <article className="vehicle-card" aria-label={name}>
       <div className="vehicle-card__visual">
+        {/* First-row photos load right away and first; the rest wait until they are scrolled near. */}
         <img
           className="vehicle-card__image"
           src={image}
           alt={name}
           width="720"
           height="540"
-          loading="lazy"
+          loading={isAboveTheFold ? "eager" : "lazy"}
+          fetchPriority={isAboveTheFold ? "high" : "auto"}
           decoding="async"
         />
         <span className="vehicle-card__visual-year">{vehicle.year}</span>

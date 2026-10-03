@@ -24,7 +24,11 @@ export async function searchVehicles(criteria, signal) {
     }
   }
 
-  const response = await fetch(`/api/vehicles?${params.toString()}`, { signal });
+  const url = `/api/vehicles?${params.toString()}`;
+  const response = (await takeInitialResponse(url)) ?? (await fetch(url, { signal }));
+  if (signal?.aborted) {
+    throw new DOMException("A newer search replaced this one.", "AbortError");
+  }
   if (!response.ok) {
     const detail = await problemDetail(response);
     throw new Error(
@@ -35,6 +39,15 @@ export async function searchVehicles(criteria, signal) {
   }
 
   return response.json();
+}
+
+// index.html starts the default search before the app's code arrives (see the script there).
+// Only the app's first search may use that response, and only if it asks for the same URL;
+// otherwise it is dropped so a later search can never get old results.
+function takeInitialResponse(url) {
+  const initial = globalThis.__initialVehicleSearch;
+  globalThis.__initialVehicleSearch = undefined;
+  return initial?.url === url ? initial.response : null;
 }
 
 // The server explains errors in an RFC 9457 problem detail: { "status": 400, "detail": "..." }.
