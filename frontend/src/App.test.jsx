@@ -60,6 +60,7 @@ function mockSearchApi() {
 }
 
 beforeEach(() => {
+  window.history.replaceState(null, "", "/");
   window.localStorage.clear();
   mockSearchApi();
 });

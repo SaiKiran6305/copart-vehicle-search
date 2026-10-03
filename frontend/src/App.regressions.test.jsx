@@ -34,6 +34,7 @@ const requestParams = (call = -1) =>
   new URL(global.fetch.mock.calls.at(call)[0], window.location.origin).searchParams;
 
 beforeEach(() => {
+  window.history.replaceState(null, "", "/");
   window.localStorage.clear();
   global.fetch = vi.fn(async (url) => {
     const params = new URL(url, window.location.origin).searchParams;
