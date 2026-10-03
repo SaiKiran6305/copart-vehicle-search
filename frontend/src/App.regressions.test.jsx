@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { cleanup, render, screen, waitFor } from "@testing-library/react";
+import { act, cleanup, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import "@testing-library/jest-dom/vitest";
 import App from "./App.jsx";
@@ -46,10 +46,38 @@ beforeEach(() => {
 
 afterEach(() => {
   cleanup();
+  vi.unstubAllGlobals();
   vi.restoreAllMocks();
 });
 
 describe("search state regressions", () => {
+  it("shows the sticky composer only after the panel is fully above the viewport and mirrors its input", async () => {
+    const observers = [];
+    class MockIntersectionObserver {
+      constructor(callback) { this.callback = callback; observers.push(this); }
+      observe() {}
+      disconnect() {}
+    }
+    vi.stubGlobal("IntersectionObserver", MockIntersectionObserver);
+
+    const user = userEvent.setup();
+    render(<App />);
+    await screen.findByRole("heading", { name: "300 vehicles" });
+
+    act(() => observers[0].callback([{ isIntersecting: true, boundingClientRect: { bottom: -10 } }]));
+    expect(screen.queryByRole("region", { name: "Quick vehicle search" })).not.toBeInTheDocument();
+    act(() => observers[0].callback([{ isIntersecting: false, boundingClientRect: { bottom: 10 } }]));
+    expect(screen.queryByRole("region", { name: "Quick vehicle search" })).not.toBeInTheDocument();
+
+    act(() => observers[0].callback([{ isIntersecting: false, boundingClientRect: { bottom: -1 } }]));
+    const sticky = screen.getByRole("region", { name: "Quick vehicle search" });
+    const searchboxes = screen.getAllByRole("searchbox", { name: /search by vehicle/i });
+    expect(searchboxes).toHaveLength(2);
+    await user.type(searchboxes[0], "Dallas");
+    expect(searchboxes[1]).toHaveValue("Dallas");
+    expect(sticky).toContainElement(searchboxes[1]);
+  });
+
   it("keeps the chosen sort and page size when the search box is cleared", async () => {
     const user = userEvent.setup();
     render(<App />);
@@ -152,12 +180,12 @@ describe("search state regressions", () => {
     render(<App />);
     await screen.findByRole("heading", { name: "300 vehicles" });
 
-    await user.type(screen.getByLabelText("Search with AI"), "a newer SUV");
-    await user.click(screen.getByRole("button", { name: "Search with AI" }));
+    await user.type(screen.getByRole("searchbox", { name: /search by vehicle/i }), "a newer SUV");
+    await user.click(screen.getByRole("button", { name: "Ask AI" }));
     expect(await screen.findByText("Which year range?")).toBeInTheDocument();
 
     await user.click(screen.getByRole("button", { name: "Clear filters" }));
-    expect(screen.getByLabelText("Search with AI")).toHaveValue("");
+    expect(screen.getByRole("searchbox", { name: /search by vehicle/i })).toHaveValue("");
     expect(screen.queryByText("Which year range?")).not.toBeInTheDocument();
   });
 
@@ -173,8 +201,8 @@ describe("search state regressions", () => {
     render(<App />);
     await screen.findByRole("heading", { name: "300 vehicles" });
 
-    await user.type(screen.getByLabelText("Search with AI"), "Toyota under $20,000");
-    await user.click(screen.getByRole("button", { name: "Search with AI" }));
+    await user.type(screen.getByRole("searchbox", { name: /search by vehicle/i }), "Toyota under $20,000");
+    await user.click(screen.getByRole("button", { name: "Ask AI" }));
     await waitFor(() => expect(screen.getByLabelText("Make")).toHaveValue("Toyota"));
 
     await user.selectOptions(screen.getByLabelText("Primary damage"), "Hail");
@@ -193,8 +221,8 @@ describe("search state regressions", () => {
     render(<App />);
     await screen.findByRole("heading", { name: "300 vehicles" });
 
-    await user.type(screen.getByLabelText("Search with AI"), "Toyota under $20,000");
-    await user.click(screen.getByRole("button", { name: "Search with AI" }));
+    await user.type(screen.getByRole("searchbox", { name: /search by vehicle/i }), "Toyota under $20,000");
+    await user.click(screen.getByRole("button", { name: "Ask AI" }));
 
     expect(await screen.findByText("Too many AI searches. Please wait 42 seconds and try again."))
       .toBeInTheDocument();
