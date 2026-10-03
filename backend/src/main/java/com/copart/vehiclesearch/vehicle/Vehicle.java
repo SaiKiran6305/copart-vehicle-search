@@ -24,7 +24,8 @@ import java.time.LocalDate;
 @Table(name = "vehicles", indexes = {
         @Index(name = "idx_vehicle_make_model", columnList = "make, model"),
         @Index(name = "idx_vehicle_year", columnList = "model_year"),
-        @Index(name = "idx_vehicle_condition", columnList = "condition")
+        @Index(name = "idx_vehicle_condition", columnList = "condition"),
+        @Index(name = "idx_vehicle_primary_damage", columnList = "primary_damage")
 })
 @Check(constraints = "model_year BETWEEN 1886 AND 2100 AND odometer >= 0 AND estimated_value >= 0")
 public class Vehicle {
@@ -54,6 +55,15 @@ public class Vehicle {
     @Column(nullable = false, length = 60)
     private String model;
 
+    /** Main damage category, e.g. "Front End" or "Water/Flood". */
+    @NotBlank
+    @Size(max = 40)
+    // Nullable at the database level so an existing local database can gain the column;
+    // the seed loader then replaces those rows with complete data.
+    @Column(name = "primary_damage", length = 40)
+    private String primaryDamage;
+
+    /** Copart-style lot condition, e.g. "Run and Drive" or "Stationary". */
     @NotBlank
     @Size(max = 40)
     @Column(nullable = false, length = 40)
@@ -82,13 +92,14 @@ public class Vehicle {
     protected Vehicle() {
     }
 
-    public Vehicle(String lotNumber, Integer year, String make, String model,
+    public Vehicle(String lotNumber, Integer year, String make, String model, String primaryDamage,
                    String condition, String location, LocalDate saleDate,
                    Integer odometer, BigDecimal estimatedValue) {
         this.lotNumber = lotNumber;
         this.year = year;
         this.make = make;
         this.model = model;
+        this.primaryDamage = primaryDamage;
         this.condition = condition;
         this.location = location;
         this.saleDate = saleDate;
@@ -101,6 +112,7 @@ public class Vehicle {
     public Integer getYear() { return year; }
     public String getMake() { return make; }
     public String getModel() { return model; }
+    public String getPrimaryDamage() { return primaryDamage; }
     public String getCondition() { return condition; }
     public String getLocation() { return location; }
     public LocalDate getSaleDate() { return saleDate; }

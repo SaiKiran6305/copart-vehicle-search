@@ -15,7 +15,8 @@ public final class VehicleSearchSpecification {
     }
 
     public static Specification<Vehicle> matches(String query, String make, String model,
-                                                 String condition, Integer minYear, Integer maxYear,
+                                                 String primaryDamage, String condition,
+                                                 Integer minYear, Integer maxYear,
                                                  BigDecimal minPrice, BigDecimal maxPrice,
                                                  BigDecimal maxPriceInclusive) {
         return (root, unusedQuery, criteriaBuilder) -> {
@@ -36,6 +37,11 @@ public final class VehicleSearchSpecification {
             if (hasText(model)) {
                 predicates.add(criteriaBuilder.equal(
                         criteriaBuilder.lower(root.get("model")), model.trim().toLowerCase(Locale.ROOT)));
+            }
+            if (hasText(primaryDamage)) {
+                predicates.add(criteriaBuilder.equal(
+                        criteriaBuilder.lower(root.get("primaryDamage")),
+                        primaryDamage.trim().toLowerCase(Locale.ROOT)));
             }
             if (hasText(condition)) {
                 predicates.add(criteriaBuilder.equal(

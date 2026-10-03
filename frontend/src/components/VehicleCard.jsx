@@ -1,5 +1,5 @@
 import { getVehicleImage } from "../data/vehicleImages.js";
-import { getConditionTone } from "../data/conditions.js";
+import { getDamageTone } from "../data/conditions.js";
 
 const currency = new Intl.NumberFormat("en-US", {
   style: "currency",
@@ -21,31 +21,27 @@ function formatDate(value) {
 
 export default function VehicleCard({ vehicle, isFavorite, onFavoriteToggle }) {
   const image = getVehicleImage(vehicle);
+  const name = `${vehicle.year} ${vehicle.make} ${vehicle.model}`;
 
   return (
-    <article
-      className="vehicle-card"
-      aria-label={`${vehicle.year} ${vehicle.make} ${vehicle.model}`}
-    >
+    <article className="vehicle-card" aria-label={name}>
       <div className="vehicle-card__visual">
         <img
           className="vehicle-card__image"
           src={image}
-          alt=""
-          aria-hidden="true"
+          alt={`${name}, representative photo`}
           width="720"
           height="540"
           loading="lazy"
           decoding="async"
         />
         <span className="vehicle-card__visual-year">{vehicle.year}</span>
+        <span className="vehicle-card__representative" aria-hidden="true">Representative photo</span>
         <span className="vehicle-card__lot">{vehicle.lotNumber}</span>
         <button
           className={`favorite-button${isFavorite ? " is-favorite" : ""}`}
           type="button"
-          aria-label={isFavorite
-            ? `Remove ${vehicle.year} ${vehicle.make} ${vehicle.model} from saved vehicles`
-            : `Save ${vehicle.year} ${vehicle.make} ${vehicle.model}`}
+          aria-label={isFavorite ? `Remove ${name} from saved vehicles` : `Save ${name}`}
           aria-pressed={isFavorite}
           onClick={() => onFavoriteToggle(vehicle.id)}
         >
@@ -61,12 +57,26 @@ export default function VehicleCard({ vehicle, isFavorite, onFavoriteToggle }) {
             <h3>{vehicle.make} {vehicle.model}</h3>
             <p>{vehicle.location}</p>
           </div>
-          <span className={`condition-pill condition-pill--${getConditionTone(vehicle.condition)}`}>
-            {vehicle.condition}
+          <span
+            className={`damage-pill damage-pill--${getDamageTone(vehicle.primaryDamage)}`}
+            title="Primary damage"
+          >
+            <span className="sr-only">Primary damage: </span>
+            {vehicle.primaryDamage}
           </span>
         </div>
 
         <dl className="vehicle-card__details">
+          <div className="vehicle-card__detail--wide">
+            <dt>Condition</dt>
+            <dd>
+              <span
+                className={`condition-dot${vehicle.condition === "Stationary" ? " condition-dot--off" : ""}`}
+                aria-hidden="true"
+              />
+              {vehicle.condition}
+            </dd>
+          </div>
           <div>
             <dt>Sale date</dt>
             <dd>{formatDate(vehicle.saleDate)}</dd>

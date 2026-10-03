@@ -43,17 +43,35 @@ class VehicleControllerTest {
                         .param("q", "tOyOtA"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.totalElements").value(30))
-                .andExpect(jsonPath("$.content[0].lotNumber").value("LOT-1029"));
+                .andExpect(jsonPath("$.content[0].lotNumber").value("LOT-1004"));
     }
 
     @Test
     void filtersByMakeAndCondition() throws Exception {
         mockMvc.perform(get("/api/vehicles")
                         .param("make", "Toyota")
-                        .param("condition", "Run & Drive"))
+                        .param("condition", "Run and Drive"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.totalElements").value(6))
-                .andExpect(jsonPath("$.content[0].lotNumber").value("LOT-1039"));
+                .andExpect(jsonPath("$.content[0].lotNumber").value("LOT-1065"));
+    }
+
+    @Test
+    void filtersByPrimaryDamageSeparatelyFromCondition() throws Exception {
+        mockMvc.perform(get("/api/vehicles")
+                        .param("primaryDamage", "water/FLOOD")
+                        .param("size", "100"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.totalElements").value(23))
+                .andExpect(jsonPath("$.content[0].lotNumber").value("LOT-1019"))
+                .andExpect(jsonPath("$.content[0].primaryDamage").value("Water/Flood"));
+
+        mockMvc.perform(get("/api/vehicles")
+                        .param("primaryDamage", "Water/Flood")
+                        .param("condition", "Stationary"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.totalElements").value(17))
+                .andExpect(jsonPath("$.content[0].condition").value("Stationary"));
     }
 
     @Test
@@ -65,10 +83,10 @@ class VehicleControllerTest {
                         .param("direction", "asc")
                         .param("size", "100"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.totalElements").value(57))
+                .andExpect(jsonPath("$.totalElements").value(59))
                 .andExpect(jsonPath("$.content[0].year").value(2020))
-                .andExpect(jsonPath("$.content[28].year").value(2020))
-                .andExpect(jsonPath("$.content[29].year").value(2021));
+                .andExpect(jsonPath("$.content[29].year").value(2020))
+                .andExpect(jsonPath("$.content[30].year").value(2021));
     }
 
     @Test
@@ -78,18 +96,20 @@ class VehicleControllerTest {
                         .param("maxPrice", "20000")
                         .param("size", "100"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.totalElements").value(124))
-                .andExpect(jsonPath("$.content[0].estimatedValue").value(11250));
+                .andExpect(jsonPath("$.totalElements").value(129))
+                .andExpect(jsonPath("$.content[0].estimatedValue").value(10900));
     }
 
     @Test
     void filtersByInclusiveMaximumEstimatedValue() throws Exception {
         mockMvc.perform(get("/api/vehicles")
-                        .param("maxPriceInclusive", "20000")
+                        .param("maxPriceInclusive", "10000")
                         .param("size", "100"))
                 .andExpect(status().isOk())
-                // LOT-1053 is valued at exactly $20,000, so the inclusive bound returns one more than < 20000.
-                .andExpect(jsonPath("$.totalElements").value(243));
+                // LOT-1010 and LOT-1092 are valued at exactly $10,000: 121 lots are below it, 123 at or below.
+                .andExpect(jsonPath("$.totalElements").value(123));
+        mockMvc.perform(get("/api/vehicles").param("maxPrice", "10000"))
+                .andExpect(jsonPath("$.totalElements").value(121));
     }
 
     @Test

@@ -26,7 +26,7 @@ class VehicleDataInitializerTest {
     @Test
     void replacesStoredVehiclesWhenTheSeedFileDiffers() throws Exception {
         repository.deleteAllInBatch();
-        repository.save(new Vehicle("LOT-OLD", 2018, "Toyota", "Camry", "Run & Drive", "Dallas, TX",
+        repository.save(new Vehicle("LOT-OLD", 2018, "Toyota", "Camry", "Front End", "Run and Drive", "Dallas, TX",
                 LocalDate.of(2026, 1, 1), 1000, new BigDecimal("1000")));
 
         seedVehicles.run();

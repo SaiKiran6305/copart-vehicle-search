@@ -4,6 +4,7 @@ export async function searchVehicles(criteria, signal) {
     "q",
     "make",
     "model",
+    "primaryDamage",
     "condition",
     "minYear",
     "maxYear",

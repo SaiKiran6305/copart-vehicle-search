@@ -24,8 +24,8 @@ const emptyResult = {
 
 const savedVehiclesKey = "copart:saved-vehicle-ids:v1";
 
-const searchableFields = ["q", "make", "model", "condition", "minYear", "maxYear", "priceRange"];
-const instantFields = ["make", "model", "condition", "priceRange"];
+const searchableFields = ["q", "make", "model", "primaryDamage", "condition", "minYear", "maxYear", "priceRange"];
+const instantFields = ["make", "model", "primaryDamage", "condition", "priceRange"];
 
 function scrollToElement(selector) {
   const element = document.querySelector(selector);
@@ -58,6 +58,7 @@ export default function App() {
   const [requestVersion, setRequestVersion] = useState(0);
   const [favoriteIds, setFavoriteIds] = useState(readSavedVehicleIds);
   const [showStickySearch, setShowStickySearch] = useState(false);
+  const [filtersOpen, setFiltersOpen] = useState(false);
   const [aiQuery, setAiQuery] = useState("");
   const [aiClarification, setAiClarification] = useState("");
   const [aiQuestion, setAiQuestion] = useState("");
@@ -87,7 +88,21 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    const updateStickySearch = () => setShowStickySearch(window.scrollY > 320);
+    // Show the compact search bar only once the whole search panel has scrolled out of view,
+    // so the page never shows two search boxes at once.
+    const panel = document.querySelector(".search-panel");
+    if (!panel) return undefined;
+
+    if (typeof window.IntersectionObserver === "function") {
+      const observer = new window.IntersectionObserver(([entry]) => {
+        setShowStickySearch(!entry.isIntersecting && entry.boundingClientRect.bottom <= 0);
+      });
+      observer.observe(panel);
+      return () => observer.disconnect();
+    }
+
+    // Fallback without IntersectionObserver (for example in tests): only once the panel is fully above the screen.
+    const updateStickySearch = () => setShowStickySearch(panel.getBoundingClientRect().bottom < 0);
     updateStickySearch();
     window.addEventListener("scroll", updateStickySearch, { passive: true });
     return () => window.removeEventListener("scroll", updateStickySearch);
@@ -147,7 +162,8 @@ export default function App() {
   const applyAiFilters = (interpreted) => {
     const nextFilters = {
       ...filters, q: interpreted.q || "", make: interpreted.make || "",
-      model: interpreted.model || "", condition: interpreted.condition || "",
+      model: interpreted.model || "", primaryDamage: interpreted.primaryDamage || "",
+      condition: interpreted.condition || "",
       minYear: interpreted.minYear == null ? "" : String(interpreted.minYear),
       maxYear: interpreted.maxYear == null ? "" : String(interpreted.maxYear),
       priceRange: interpreted.maxPriceInclusive == null ? "" : "up-to-" + interpreted.maxPriceInclusive,
@@ -225,6 +241,18 @@ export default function App() {
     applyFilters(filters);
   };
 
+  // Remove filters suggested for a sparse result, starting from the search that is applied now.
+  const handleRemoveFilter = (fields) => {
+    const nextFilters = { ...initialFilters };
+    for (const key of Object.keys(initialFilters)) {
+      if (criteria[key] !== undefined && criteria[key] !== null) nextFilters[key] = String(criteria[key]);
+    }
+    for (const field of fields) nextFilters[field] = "";
+    setFilters(nextFilters);
+    setError("");
+    applyFilters(nextFilters);
+  };
+
   const handleClear = () => {
     setFilters(initialFilters);
     setValidationError("");
@@ -265,8 +293,12 @@ export default function App() {
   }, []);
 
   const showFilters = () => {
+    setFiltersOpen(true);
     scrollToElement(".search-panel");
   };
+
+  const activeFilterCount = ["make", "model", "primaryDamage", "condition", "priceRange"]
+    .filter((field) => filters[field]).length + (filters.minYear || filters.maxYear ? 1 : 0);
 
   const handleRetry = useCallback(() => {
     setRequestVersion((current) => current + 1);
@@ -283,7 +315,6 @@ export default function App() {
       <main>
         <section className="hero">
           <div className="hero__content">
-            <p className="eyebrow eyebrow--light">Vehicle marketplace</p>
             <h1>Find a vehicle</h1>
             <p className="hero__description">
               Search by make, model, lot number, or location.
@@ -305,6 +336,9 @@ export default function App() {
             onClear={handleClear}
             isLoading={isLoading}
             validationError={validationError}
+            filtersOpen={filtersOpen || Boolean(validationError)}
+            onToggleFilters={() => setFiltersOpen((open) => !open)}
+            activeFilterCount={activeFilterCount}
             aiQuery={aiQuery}
             onAiQueryChange={(event) => setAiQuery(event.target.value)}
             aiQuestion={aiQuestion}
@@ -343,6 +377,7 @@ export default function App() {
             onPageChange={handlePageChange}
             onRetry={handleRetry}
             onReset={handleClear}
+            onRemoveFilter={handleRemoveFilter}
             criteria={criteria}
             onSortChange={handleSortChange}
             onPageSizeChange={handlePageSizeChange}

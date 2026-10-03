@@ -54,15 +54,16 @@ public class VehicleDataInitializer {
 
     private static String describe(Vehicle vehicle) {
         return describe(vehicle.getLotNumber(), vehicle.getYear(), vehicle.getMake(), vehicle.getModel(),
-                vehicle.getCondition(), vehicle.getLocation(), vehicle.getSaleDate(), vehicle.getOdometer(),
+                vehicle.getPrimaryDamage(), vehicle.getCondition(), vehicle.getLocation(), vehicle.getSaleDate(), vehicle.getOdometer(),
                 vehicle.getEstimatedValue());
     }
 
-    private static String describe(String lotNumber, Integer year, String make, String model, String condition,
+    private static String describe(String lotNumber, Integer year, String make, String model,
+                                   String primaryDamage, String condition,
                                    String location, LocalDate saleDate, Integer odometer,
                                    BigDecimal estimatedValue) {
         String value = estimatedValue == null ? "" : estimatedValue.stripTrailingZeros().toPlainString();
-        return String.join("|", lotNumber, String.valueOf(year), make, model, condition, location,
+        return String.join("|", lotNumber, String.valueOf(year), make, model, String.valueOf(primaryDamage), condition, location,
                 String.valueOf(saleDate), String.valueOf(odometer), value);
     }
 
@@ -71,6 +72,7 @@ public class VehicleDataInitializer {
             Integer year,
             String make,
             String model,
+            String primaryDamage,
             String condition,
             String location,
             LocalDate saleDate,
@@ -78,12 +80,12 @@ public class VehicleDataInitializer {
             BigDecimal estimatedValue
     ) {
         private String describe() {
-            return VehicleDataInitializer.describe(lotNumber, year, make, model, condition, location,
+            return VehicleDataInitializer.describe(lotNumber, year, make, model, primaryDamage, condition, location,
                     saleDate, odometer, estimatedValue);
         }
 
         private Vehicle toVehicle() {
-            return new Vehicle(lotNumber, year, make, model, condition, location, saleDate, odometer,
+            return new Vehicle(lotNumber, year, make, model, primaryDamage, condition, location, saleDate, odometer,
                     estimatedValue);
         }
     }
