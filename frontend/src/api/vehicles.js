@@ -42,6 +42,12 @@ export async function interpretVehicleSearch(query, clarification = "") {
     body: JSON.stringify({ query, clarification }),
   });
   if (!response.ok) {
+    if (response.status === 429) {
+      const waitSeconds = Number(response.headers?.get?.("Retry-After"));
+      throw new Error(waitSeconds > 0
+        ? `Too many AI searches. Please wait ${waitSeconds} second${waitSeconds === 1 ? "" : "s"} and try again.`
+        : "Too many AI searches. Please wait a minute and try again.");
+    }
     throw new Error(response.status === 503
       ? "AI search is not configured on the server yet."
       : "AI search could not complete. Please try again.");

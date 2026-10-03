@@ -121,6 +121,8 @@ Turns a free-text request into the existing search filters using the OpenAI Resp
 
 Configuration: set `OPENAI_API_KEY` (and optionally `OPENAI_MODEL`) in the environment, for example in the Railway service variables. Without a key the endpoint returns HTTP 503 and the UI shows "AI search is not configured on the server yet." The `maxPriceInclusive` search parameter (inclusive upper bound) exists for this feature.
 
+Rate limits protect the API key from abuse: each visitor (by IP) can make 10 AI searches per minute, and all visitors together 200 per hour. Over the limit the endpoint returns HTTP 429 with a `Retry-After` header and the UI asks the visitor to wait. Change the limits with `AI_SEARCH_LIMIT_PER_MINUTE` and `AI_SEARCH_LIMIT_PER_HOUR`. Counters are kept in memory, so they reset when the service restarts.
+
 ## Assumptions and limitations
 
 - Seeded records are fictional and are inserted only when the database is empty.

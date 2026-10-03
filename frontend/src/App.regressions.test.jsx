@@ -182,6 +182,22 @@ describe("search state regressions", () => {
     expect(requestParams().get("minPrice")).toBeNull();
   });
 
+  it("tells the visitor how long to wait when AI search is rate limited", async () => {
+    const user = userEvent.setup();
+    const listFetch = global.fetch;
+    global.fetch = vi.fn(async (url, options) => (url === "/api/ai-search"
+      ? { ok: false, status: 429, headers: new Headers({ "Retry-After": "42" }) }
+      : listFetch(url, options)));
+    render(<App />);
+    await screen.findByRole("heading", { name: "300 vehicles" });
+
+    await user.type(screen.getByLabelText("Search with AI"), "Toyota under $20,000");
+    await user.click(screen.getByRole("button", { name: "Search with AI" }));
+
+    expect(await screen.findByText("Too many AI searches. Please wait 42 seconds and try again."))
+      .toBeInTheDocument();
+  });
+
   it("colour-codes the condition and shows the model's body style image", async () => {
     render(<App />);
     const card = await screen.findByRole("article", { name: "2020 Toyota Camry" });
