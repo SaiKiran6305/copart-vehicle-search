@@ -28,7 +28,7 @@ cd backend
 mvn spring-boot:run
 ```
 
-The backend listens on port 8080 during local development. When the database is empty, it seeds 300 synthetic vehicle records from `backend/src/main/resources/vehicles.json`. In another terminal, start the React development server:
+The backend listens on port 8080 during local development. On startup it loads 300 synthetic vehicle records from `backend/src/main/resources/vehicles.json`. In another terminal, start the React development server:
 
 ```sh
 cd frontend
@@ -71,7 +71,9 @@ Local development uses a persistent file-based H2 database at `jdbc:h2:file:./da
 
 Tests override this configuration to use an in-memory H2 database and recreate its schema for each test run.
 
-The supplied dataset is packaged at `backend/src/main/resources/vehicles.json` so it is included in backend builds. Seeding is skipped whenever the database already contains vehicles. If you already ran an earlier version with the 12-record seed, its persistent database will keep those records; back up and reset that local database before starting if you want the new 300-record dataset loaded. Tests use a fresh in-memory database and verify the 300-record seed.
+The dataset is packaged at `backend/src/main/resources/vehicles.json` so it is included in backend builds. On startup the stored vehicles are compared with the file: if they already match, nothing changes; otherwise they are replaced with the file's contents, so a regenerated file always takes effect. Tests use a fresh in-memory database and verify the 300-record seed.
+
+The file is produced by `node scripts/generate-vehicles.mjs` (fixed random seed, so re-running gives the same data). Each of the 30 models has 10 lots with a random year (2016–2025), condition, and location. Mileage grows with age, and the estimated value comes from the model's approximate new price, depreciation by age, mileage, and damage. Lot numbers follow the weekday sale calendar.
 
 ## API
 
@@ -102,7 +104,7 @@ Supported query parameters:
 | `model` | Case-insensitive exact model filter |
 | `condition` | Case-insensitive exact condition filter |
 | `minYear`, `maxYear` | Inclusive year range |
-| `minPrice`, `maxPrice` | Estimated value range; `minPrice` is inclusive and `maxPrice` is exclusive, so `$10,000–$20,000` buckets don't overlap |
+| `minPrice`, `maxPrice` | Estimated value range; `minPrice` is inclusive and `maxPrice` is exclusive, so `$10,000–$20,000` buckets don't overlap. Either can be omitted (the UI's `$50,000+` sends only `minPrice`) |
 | `page` | Zero-based page number; defaults to `0` |
 | `size` | Page size from 1 through 100; defaults to `12` |
 | `sortBy` | One of `year`, `make`, `model`, `saleDate`, `estimatedValue`, or `odometer`; defaults to `saleDate`. Ties are broken by id so paging is stable |

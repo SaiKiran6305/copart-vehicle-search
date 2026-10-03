@@ -43,7 +43,7 @@ class VehicleControllerTest {
                         .param("q", "tOyOtA"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.totalElements").value(30))
-                .andExpect(jsonPath("$.content[0].lotNumber").value("LOT-1001"));
+                .andExpect(jsonPath("$.content[0].lotNumber").value("LOT-1029"));
     }
 
     @Test
@@ -52,8 +52,8 @@ class VehicleControllerTest {
                         .param("make", "Toyota")
                         .param("condition", "Run & Drive"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.totalElements").value(10))
-                .andExpect(jsonPath("$.content[0].lotNumber").value("LOT-1001"));
+                .andExpect(jsonPath("$.totalElements").value(6))
+                .andExpect(jsonPath("$.content[0].lotNumber").value("LOT-1039"));
     }
 
     @Test
@@ -65,9 +65,10 @@ class VehicleControllerTest {
                         .param("direction", "asc")
                         .param("size", "100"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.totalElements").value(86))
+                .andExpect(jsonPath("$.totalElements").value(57))
                 .andExpect(jsonPath("$.content[0].year").value(2020))
-                .andExpect(jsonPath("$.content[43].year").value(2021));
+                .andExpect(jsonPath("$.content[28].year").value(2020))
+                .andExpect(jsonPath("$.content[29].year").value(2021));
     }
 
     @Test
@@ -77,8 +78,8 @@ class VehicleControllerTest {
                         .param("maxPrice", "20000")
                         .param("size", "100"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.totalElements").value(86))
-                .andExpect(jsonPath("$.content[0].estimatedValue").value(11258));
+                .andExpect(jsonPath("$.totalElements").value(124))
+                .andExpect(jsonPath("$.content[0].estimatedValue").value(11250));
     }
 
     @Test
@@ -87,7 +88,8 @@ class VehicleControllerTest {
                         .param("maxPriceInclusive", "20000")
                         .param("size", "100"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.totalElements").value(100));
+                // LOT-1053 is valued at exactly $20,000, so the inclusive bound returns one more than < 20000.
+                .andExpect(jsonPath("$.totalElements").value(243));
     }
 
     @Test
@@ -115,7 +117,7 @@ class VehicleControllerTest {
                         .param("sortBy", "year")
                         .param("direction", "desc"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.content[0].year").value(2024));
+                .andExpect(jsonPath("$.content[0].year").value(2025));
     }
 
     @Test

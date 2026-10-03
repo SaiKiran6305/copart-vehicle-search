@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { interpretVehicleSearch, searchVehicles } from "./api/vehicles.js";
+import { getPriceBounds } from "./data/searchOptions.js";
 import SearchForm from "./components/SearchForm.jsx";
 import VehicleResults from "./components/VehicleResults.jsx";
 
@@ -33,13 +34,6 @@ const emptyResult = {
 };
 
 const savedVehiclesKey = "copart:saved-vehicle-ids:v1";
-
-function getPriceBounds(priceRange) {
-  if (priceRange.startsWith("up-to-")) return { maxPriceInclusive: Number(priceRange.slice(6)) };
-  if (!priceRange) return {};
-  const [minPrice, maxPrice] = priceRange.split("-").map(Number);
-  return { minPrice, maxPrice };
-}
 
 const searchableFields = ["q", "make", "model", "condition", "minYear", "maxYear", "priceRange"];
 const instantFields = ["make", "model", "condition", "priceRange"];

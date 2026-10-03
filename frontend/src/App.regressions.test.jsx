@@ -198,6 +198,17 @@ describe("search state regressions", () => {
       .toBeInTheDocument();
   });
 
+  it("searches $50,000+ with only a lower bound", async () => {
+    const user = userEvent.setup();
+    render(<App />);
+    await screen.findByRole("heading", { name: "300 vehicles" });
+
+    await user.selectOptions(screen.getByLabelText("Estimated value"), "50000-");
+
+    await waitFor(() => expect(requestParams().get("minPrice")).toBe("50000"));
+    expect(requestParams().get("maxPrice")).toBeNull();
+  });
+
   it("colour-codes the condition and shows the model's body style image", async () => {
     render(<App />);
     const card = await screen.findByRole("article", { name: "2020 Toyota Camry" });

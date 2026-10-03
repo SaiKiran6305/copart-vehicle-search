@@ -1,3 +1,5 @@
+import { pageSizes } from "../data/searchOptions.js";
+
 export default function Pagination({ result, onPageChange, pageSize, onPageSizeChange }) {
   const currentPage = result.totalPages === 0 ? 0 : result.number + 1;
 
@@ -14,10 +16,9 @@ export default function Pagination({ result, onPageChange, pageSize, onPageSizeC
             value={pageSize}
             onChange={(event) => onPageSizeChange(event.target.value)}
           >
-            <option value="12">12</option>
-            <option value="24">24</option>
-            <option value="48">48</option>
-            <option value="96">96</option>
+            {pageSizes.map((size) => (
+              <option key={size} value={size}>{size}</option>
+            ))}
           </select>
         </label>
         <div className="pagination__buttons">
