@@ -4,6 +4,8 @@ A full-stack vehicle search prototype built for a Software Engineering Intern ta
 
 **Live demo:** [copart-vehicle-search.up.railway.app](https://copart-vehicle-search.up.railway.app/)
 
+**Recorded demo:** https://drive.google.com/file/d/1yupOOoU6ybaCE3RYfxr6SXt2TS9aUlDd/view?usp=sharing
+
 All vehicle records are synthetic. This project does not use or represent live Copart inventory.
 
 ## What it does
