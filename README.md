@@ -11,7 +11,7 @@ All vehicle records are synthetic. This project does not use or represent live C
 - Search by keyword: each word is matched against the lot number, make, model, and location, and a four-digit number also matches the year (for example `toyota dallas` or `2018 camry`).
 - Filter by make, model, primary damage, condition, year range, and estimated value.
 - Sort and paginate results; the UI offers page sizes of 12, 24, 48, and 96.
-- Search with regular keywords using **Search** or Enter, or send the same text to **Ask AI** to interpret it into supported filters.
+- Search with regular keywords using **Search** or Enter, or send the same text to **Ask AI**, which uses OpenAI's `gpt-5.6-luna` model to interpret it into supported filters.
 - Ask AI can return a clarification question. When it can interpret the request, the UI applies the filters through the same vehicle-search endpoint and keeps any remaining keyword (such as a location) in the search field.
 - Share or reload a search using its URL. Browser Back and Forward restore prior applied searches.
 - Save vehicles in browser local storage, by lot number. Saved vehicles synchronize across tabs in the same browser profile, but not across devices or separate profiles.
@@ -24,7 +24,7 @@ All vehicle records are synthetic. This project does not use or represent live C
 | Frontend | React 19, JavaScript, Vite 6 |
 | Backend | Java 17, Spring Boot 3.5.5, Spring Web, Spring Data JPA, Hibernate, Jakarta Bean Validation |
 | Database | H2; file-based for the application and in-memory for tests |
-| AI integration | OpenAI Responses API, called server-side with Java's built-in `HttpClient`; structured JSON is parsed with Jackson |
+| AI integration | OpenAI Responses API with the `gpt-5.6-luna` model (configurable with `OPENAI_MODEL`), called server-side with Java's built-in `HttpClient`; structured JSON is parsed with Jackson |
 | Frontend tests | Vitest, React Testing Library, `user-event`, jsdom |
 | Backend tests | JUnit 5 and Spring Boot Test, including MockMvc |
 | Build and deployment | Maven, npm, multi-stage Dockerfile, Railway |
@@ -38,7 +38,7 @@ flowchart TB
     Browser["Browser: React UI"]
     App["Spring Boot application: static UI and REST API"]
     Database["H2 database"]
-    OpenAI["OpenAI Responses API (optional)"]
+    OpenAI["OpenAI Responses API: gpt-5.6-luna (optional)"]
 
     Browser -->|"UI and same-origin API requests"| App
     App -->|"Search results and AI interpretation"| Browser
@@ -114,7 +114,7 @@ The response is either:
 - `READY`, with supported filters such as make, model, primary damage, condition, year bounds, maximum price, and any remaining keyword in `q`; or
 - `CLARIFICATION`, with a short question when the request cannot be mapped safely to the available catalog.
 
-AI output uses a strict JSON schema and is checked against supported makes, models, damage types, conditions, year limits, and price limits before it is returned. The user query is sent from the backend to the OpenAI Responses API; the API key is never placed in frontend code. A blank `query`, or a `query` or `clarification` longer than 300 characters, returns HTTP 400. Without a configured key, this endpoint returns HTTP 503. Rate limits return HTTP 429 with a `Retry-After` header; an upstream AI failure returns HTTP 502.
+Ask AI calls OpenAI's `gpt-5.6-luna` model by default, which is what the live demo uses; set `OPENAI_MODEL` to use a different one. Each request asks for at most 300 output tokens and sets `store: false`, so OpenAI doesn't keep the response for later retrieval. AI output uses a strict JSON schema and is checked against supported makes, models, damage types, conditions, year limits, and price limits before it is returned. The user query is sent from the backend to the OpenAI Responses API; the API key is never placed in frontend code. A blank `query`, or a `query` or `clarification` longer than 300 characters, returns HTTP 400. Without a configured key, this endpoint returns HTTP 503. Rate limits return HTTP 429 with a `Retry-After` header; an upstream AI failure returns HTTP 502.
 
 ## Data and database
 
