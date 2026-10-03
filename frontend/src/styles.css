@@ -42,15 +42,25 @@ a:focus-visible {
   flex-direction: column;
 }
 
+/* Logo row at the top of the hero */
 .site-header {
-  height: 64px;
+  position: relative;
+  z-index: 2;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 max(6vw, calc((100vw - 1320px) / 2));
-  border-bottom: 1px solid #e7ebf1;
-  background: #fff;
-  color: var(--navy);
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.demo-badge {
+  padding: 5px 11px;
+  border: 1px solid rgb(255 255 255 / 28%);
+  border-radius: 999px;
+  color: #dbe6f7;
+  font-size: 11px;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
 }
 
 .brand {
@@ -63,28 +73,66 @@ a:focus-visible {
 
 .brand img {
   display: block;
-  width: 112px;
-  height: 44px;
+  width: 104px;
+  height: 40px;
+  padding: 6px 10px;
+  border-radius: 10px;
+  background: #fff;
+  box-shadow: 0 6px 18px rgb(0 0 0 / 18%);
   object-fit: contain;
-  object-position: left center;
 }
 
 .hero {
   position: relative;
-  min-height: 140px;
-  display: flex;
-  align-items: center;
   overflow: hidden;
-  padding: 22px max(6vw, calc((100vw - 1320px) / 2)) 50px;
+  padding: 14px max(6vw, calc((100vw - 1320px) / 2)) 54px;
   background:
-    radial-gradient(ellipse at 82% 115%, rgb(82 146 245 / 42%), transparent 44%),
-    linear-gradient(112deg, #10264a 0%, #174a91 66%, #2862b4 100%);
+    radial-gradient(ellipse at 85% 120%, rgb(255 179 71 / 22%), transparent 40%),
+    radial-gradient(ellipse at 10% -20%, rgb(92 154 255 / 35%), transparent 45%),
+    linear-gradient(112deg, #0c2147 0%, #16468f 60%, #2a6fd6 100%);
   color: #fff;
 }
 
+/* Title and description on the left, the stats on the right. */
 .hero__content {
   position: relative;
   z-index: 1;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  column-gap: 24px;
+  align-items: end;
+}
+
+.hero__content h1,
+.hero__description {
+  grid-column: 1;
+}
+
+.hero__stats {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.hero__stats li {
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: rgb(255 255 255 / 12%);
+  color: #e6eefb;
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.hero__stats strong {
+  margin-right: 3px;
+  color: #ffc35a;
+  font-weight: 800;
 }
 
 .eyebrow {
@@ -99,16 +147,16 @@ a:focus-visible {
 .hero h1 {
   margin: 0;
   font-family: "Avenir Next", "Segoe UI", sans-serif;
-  font-size: clamp(28px, 3vw, 38px);
+  font-size: clamp(28px, 3vw, 40px);
   font-weight: 700;
   letter-spacing: -0.045em;
   line-height: 1.15;
 }
 
 .hero__description {
-  max-width: 420px;
+  max-width: 640px;
   margin: 6px 0 0;
-  color: #cfdbed;
+  color: #d7e3f6;
   font-size: 15px;
   line-height: 1.6;
 }
@@ -164,7 +212,7 @@ a:focus-visible {
   position: absolute;
   top: 52px;
   right: 22%;
-  color: #f4a27f;
+  color: #ffc35a;
   font-size: 30px;
 }
 
@@ -213,21 +261,51 @@ a:focus-visible {
 }
 
 .button--ai {
-  border-color: var(--blue);
-  background: var(--blue);
+  border-color: transparent;
+  background: linear-gradient(135deg, #6a4bf0 0%, #2f6bea 100%);
   color: #fff;
 }
 
 .button--ai:hover:not(:disabled) {
-  border-color: var(--blue-dark);
-  background: var(--blue-dark);
+  background: linear-gradient(135deg, #5a39e6 0%, #2459d2 100%);
 }
 
-.button--ai:disabled {
+/* Still clearly the AI button before anything is typed, just a little softer
+   (more specific than the general .button:disabled rule further down). */
+.button.button--ai:disabled {
+  opacity: 0.9;
+}
+
+.quick-searches {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 7px;
+  margin-top: 12px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.quick-search {
+  padding: 5px 11px;
+  border: 1px solid #d9e3f3;
+  border-radius: 999px;
+  background: #f4f8ff;
+  color: #24508f;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.quick-search:hover {
+  border-color: #9db8e6;
+  background: #eaf2ff;
+}
+
+.quick-search[aria-pressed="true"] {
   border-color: var(--blue);
   background: var(--blue);
   color: #fff;
-  opacity: 0.82;
 }
 
 .search-composer__filters {
@@ -614,20 +692,20 @@ a:focus-visible {
 .vehicle-card {
   min-width: 0;
   overflow: hidden;
-  border: 1px solid #e5eaf1;
+  border: 1px solid #e3e9f2;
   border-radius: 11px;
   background: #fff;
+  box-shadow: 0 2px 8px rgb(21 39 72 / 5%);
   transition: box-shadow 140ms ease, transform 140ms ease;
 }
 
 .vehicle-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 9px 22px rgb(21 39 72 / 9%);
+  transform: translateY(-3px);
+  box-shadow: 0 14px 30px rgb(21 39 72 / 14%);
 }
 
 .vehicle-card__visual {
   position: relative;
-  min-height: 190px;
   display: grid;
   place-items: center;
   overflow: hidden;
@@ -692,16 +770,49 @@ a:focus-visible {
   font-weight: 700;
 }
 
+/* The photo fills the top of the card, slightly zoomed so the car is the focus. A 3:2 box trims
+   only wall and floor from the 4:3 photos, so the car is never cut off at any card width. */
 .vehicle-card__image {
   position: relative;
   z-index: 1;
   display: block;
   width: 100%;
-  height: 190px;
-  object-fit: contain;
+  height: auto;
+  aspect-ratio: 3 / 2;
+  object-fit: cover;
   object-position: center;
   padding: 0;
   background: transparent;
+  transform: scale(1.06);
+  transition: transform 300ms ease;
+}
+
+.vehicle-card:hover .vehicle-card__image {
+  transform: scale(1.1);
+}
+
+/* Darkens the bottom of the photo slightly so the badges on it stay readable. */
+.vehicle-card__visual::after {
+  position: absolute;
+  z-index: 1;
+  inset: auto 0 0;
+  height: 60px;
+  background: linear-gradient(transparent, rgb(10 25 50 / 28%));
+  content: "";
+  pointer-events: none;
+}
+
+.vehicle-card__countdown {
+  position: absolute;
+  z-index: 2;
+  left: 12px;
+  bottom: 12px;
+  padding: 4px 9px;
+  border-radius: 999px;
+  background: #ffc35a;
+  color: #4a2d00;
+  font-size: 11px;
+  font-weight: 800;
 }
 
 .vehicle-card__lot {
@@ -839,9 +950,9 @@ a:focus-visible {
 }
 
 .vehicle-card__value strong {
-  color: #1c3761;
+  color: #1f5fd1;
   font-family: "Avenir Next", "Segoe UI", sans-serif;
-  font-size: 16px;
+  font-size: 19px;
   font-weight: 800;
 }
 
@@ -969,7 +1080,7 @@ a:focus-visible {
 
 .skeleton--eyebrow { width: 110px; height: 10px; margin-bottom: 10px; }
 .skeleton--title { width: 160px; height: 22px; }
-.skeleton--image { height: 190px; border-radius: 0; }
+.skeleton--image { height: auto; aspect-ratio: 3 / 2; border-radius: 0; }
 .skeleton--line { height: 11px; margin-bottom: 11px; }
 .skeleton--wide { width: 70%; height: 15px; }
 .skeleton--narrow { width: 45%; }
@@ -1072,14 +1183,32 @@ a:focus-visible {
 }
 
 @media (max-width: 719.98px) {
-  .site-header {
-    height: 58px;
-    padding: 0 6%;
+  .hero {
+    padding: 14px 6% 44px;
   }
 
-  .hero {
-    min-height: 0;
-    padding: 18px 6% 44px;
+  .hero__content {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  /* Phones: no stats, and the popular searches are one row you can swipe. */
+  .hero__stats {
+    display: none;
+  }
+
+  .quick-searches {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    padding-bottom: 2px;
+    scrollbar-width: none;
+  }
+
+  .quick-searches::-webkit-scrollbar {
+    display: none;
+  }
+
+  .quick-searches > * {
+    flex: 0 0 auto;
   }
 
   .hero__art {

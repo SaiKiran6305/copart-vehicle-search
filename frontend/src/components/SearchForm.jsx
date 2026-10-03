@@ -1,5 +1,6 @@
 import FilterPanel from "./FilterPanel.jsx";
 import SearchControls from "./SearchControls.jsx";
+import { quickSearches } from "../data/searchOptions.js";
 
 // One-click answers to the AI's "Did you mean …?" questions:
 //   "Did you mean Toyota Corolla?"                        -> ["Yes"]
@@ -40,6 +41,8 @@ export default function SearchForm({
   onAiSearch,
   onAiAnswer,
   onAiCancel,
+  onQuickSearch,
+  activeQuickSearch,
 }) {
   const answers = aiQuestion ? quickAnswers(aiQuestion) : [];
 
@@ -54,6 +57,23 @@ export default function SearchForm({
         isLoading={isLoading}
         onAskAi={onAiSearch}
       />
+
+      {!aiQuestion && (
+        <div className="quick-searches" role="group" aria-label="Popular searches">
+          <span className="quick-searches__label">Popular:</span>
+          {quickSearches.map(({ label, filters: preset }) => (
+            <button
+              key={label}
+              className="quick-search"
+              type="button"
+              aria-pressed={activeQuickSearch === label}
+              onClick={() => onQuickSearch(preset)}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+      )}
 
       {aiQuestion && (
         <div className="ai-followup" role="status">

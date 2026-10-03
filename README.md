@@ -15,6 +15,7 @@ All vehicle records are synthetic. This project does not use or represent live C
 - Ask AI can return a clarification question. When it can interpret the request, the UI applies the filters through the same vehicle-search endpoint and keeps any remaining keyword (such as a location) in the search field.
 - Share or reload a search using its URL. Browser Back and Forward restore prior applied searches.
 - Save vehicles in browser local storage, by lot number. Saved vehicles synchronize across tabs in the same browser profile, but not across devices or separate profiles.
+- Start from a popular search with one click (Under $5,000, Tesla, 2025 or newer, Texas); cards show a "Sale in N days" tag for sales in the next two weeks.
 - View loading, validation, service-error, and no-results states. For very small result sets, the UI can suggest removing an active filter.
 
 ## Technologies

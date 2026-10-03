@@ -25,6 +25,15 @@ export const sortOptions = [
 
 export const pageSizes = [12, 24, 48, 96];
 
+// One-click searches shown under the search box. Each starts a new search with only these filters.
+// Locations are stored as "Dallas, TX", so Texas searches for "TX".
+export const quickSearches = [
+  { label: "Under $5,000", filters: { priceRange: "0-5000" } },
+  { label: "Tesla", filters: { make: "Tesla" } },
+  { label: "2025 or newer", filters: { minYear: "2025" } },
+  { label: "Texas", filters: { q: "TX" } },
+];
+
 // "up-to-20000" comes from AI search; the rest are the ranges above ("30000-" has no upper bound).
 export function getPriceBounds(priceRange) {
   if (!priceRange) return {};

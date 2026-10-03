@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { interpretVehicleSearch, searchVehicles } from "./api/vehicles.js";
-import { getPriceBounds } from "./data/searchOptions.js";
+import { getPriceBounds, quickSearches } from "./data/searchOptions.js";
 import {
   initialCriteria,
   initialFilters,
@@ -29,6 +29,9 @@ const savedVehiclesKey = "copart:saved-lot-numbers:v2";
 const legacySavedVehiclesKey = "copart:saved-vehicle-ids:v1";
 
 const searchableFields = ["q", "make", "model", "primaryDamage", "condition", "minYear", "maxYear", "priceRange"];
+
+const hasActiveFilters = (criteria) =>
+  searchableFields.some((field) => criteria[field] != null && String(criteria[field]).trim() !== "");
 const instantFields = ["make", "model", "primaryDamage", "condition", "priceRange"];
 
 function scrollToElement(selector) {
@@ -57,6 +60,8 @@ export default function App() {
   // so the URL is normalised in place instead of adding a history entry.
   const criteriaFromUrl = useRef(true);
   const [result, setResult] = useState(emptyResult);
+  // Total number of vehicles, shown in the header; known once an unfiltered search has run.
+  const [inventoryTotal, setInventoryTotal] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
   const [validationError, setValidationError] = useState("");
@@ -121,7 +126,10 @@ export default function App() {
     setError("");
 
     searchVehicles(criteria, controller.signal)
-      .then(setResult)
+      .then((page) => {
+        setResult(page);
+        if (!hasActiveFilters(criteria)) setInventoryTotal(page.totalElements);
+      })
       .catch((requestError) => {
         if (requestError.name !== "AbortError") {
           setError(requestError.message);
@@ -231,6 +239,30 @@ export default function App() {
       if (requestVersion === aiRequestVersion.current) setIsAiLoading(false);
     }
   };
+
+  // A "Popular" chip starts a new search with only that chip's filters, keeping sort and page size.
+  const handleQuickSearch = (presetFilters) => {
+    aiRequestVersion.current += 1;
+    setIsAiLoading(false);
+    const nextFilters = {
+      ...initialFilters,
+      sortBy: filters.sortBy,
+      direction: filters.direction,
+      size: filters.size,
+      ...presetFilters,
+    };
+    setFilters(nextFilters);
+    setAiQuestion("");
+    setPendingAiQuery("");
+    setAiClarification("");
+    setAiChips([]);
+    setAiError("");
+    setError("");
+    applyFilters(nextFilters);
+  };
+
+  const activeQuickSearch = quickSearches.find(({ filters: preset }) =>
+    searchableFields.every((field) => String(criteria[field] ?? "") === String(preset[field] ?? "")))?.label;
 
   // No to a "Did you mean …?" question: drop the question and put the original text back to edit.
   const cancelAiQuestion = () => {
@@ -399,28 +431,35 @@ export default function App() {
 
   return (
     <div className="app-shell">
-      <header className="site-header">
-        <a className="brand" href="/" aria-label="Copart Vehicle Search home">
-          <img src="/copart-logo.svg" alt="Copart" />
-        </a>
+      <header className="hero">
+        <div className="site-header">
+          <a className="brand" href="/" aria-label="Copart Vehicle Search home">
+            <img src="/copart-logo.svg" alt="Copart" />
+          </a>
+          <span className="demo-badge">Demo · synthetic listings</span>
+        </div>
+        <div className="hero__content">
+          <h1>Find your next vehicle</h1>
+          <p className="hero__description">
+            Search by make, model, lot number, or location — or just describe what you want.
+          </p>
+          <ul className="hero__stats" aria-label="About the listings">
+            {inventoryTotal != null && (
+              <li><strong>{inventoryTotal.toLocaleString("en-US")}</strong> vehicles</li>
+            )}
+            <li><strong>15</strong> locations</li>
+            <li><strong>Mon–Fri</strong> sales</li>
+          </ul>
+        </div>
+        <div className="hero__art" aria-hidden="true">
+          <span className="hero__ring hero__ring--one" />
+          <span className="hero__ring hero__ring--two" />
+          <span className="hero__road" />
+          <span className="hero__spark">✦</span>
+        </div>
       </header>
 
       <main>
-        <section className="hero">
-          <div className="hero__content">
-            <h1>Find a vehicle</h1>
-            <p className="hero__description">
-              Search by make, model, lot number, or location.
-            </p>
-          </div>
-          <div className="hero__art" aria-hidden="true">
-            <span className="hero__ring hero__ring--one" />
-            <span className="hero__ring hero__ring--two" />
-            <span className="hero__road" />
-            <span className="hero__spark">✦</span>
-          </div>
-        </section>
-
         <div className="content-wrap">
           <SearchForm
             filters={filters}
@@ -443,6 +482,8 @@ export default function App() {
             onAiSearch={runAiSearch}
             onAiAnswer={runAiSearch}
             onAiCancel={cancelAiQuestion}
+            onQuickSearch={handleQuickSearch}
+            activeQuickSearch={activeQuickSearch}
           />
           {showStickySearch && (
             <div className="sticky-search" role="region" aria-label="Quick vehicle search">
