@@ -1,4 +1,4 @@
-const modelsByMake = {
+export const modelsByMake = {
   BMW: ["3 Series", "5 Series", "X3"],
   Chevrolet: ["Equinox", "Malibu", "Silverado"],
   Ford: ["Escape", "F-150", "Mustang"],

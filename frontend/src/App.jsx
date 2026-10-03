@@ -25,7 +25,7 @@ const initialCriteria = {
 const emptyResult = {
   content: [],
   number: 0,
-  size: 10,
+  size: 12,
   totalElements: 0,
   totalPages: 0,
   first: true,
@@ -39,6 +39,28 @@ function getPriceBounds(priceRange) {
   if (!priceRange) return {};
   const [minPrice, maxPrice] = priceRange.split("-").map(Number);
   return { minPrice, maxPrice };
+}
+
+const searchableFields = ["q", "make", "model", "condition", "minYear", "maxYear", "priceRange"];
+const instantFields = ["make", "model", "condition", "priceRange"];
+
+function validateYearRange(minYear, maxYear) {
+  if (minYear && maxYear && Number(minYear) > Number(maxYear)) {
+    return "Minimum year must be less than or equal to maximum year.";
+  }
+  for (const year of [minYear, maxYear]) {
+    if (year && (!Number.isInteger(Number(year)) || Number(year) < 1886 || Number(year) > 2100)) {
+      return "Enter a year between 1886 and 2100.";
+    }
+  }
+  return "";
+}
+
+function scrollToElement(selector) {
+  const element = document.querySelector(selector);
+  if (!element || typeof element.scrollIntoView !== "function") return;
+  const reduceMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+  element.scrollIntoView({ behavior: reduceMotion ? "auto" : "smooth", block: "start" });
 }
 
 function readSavedVehicleIds() {
@@ -151,6 +173,33 @@ export default function App() {
     }
   };
 
+  // Sends everything the form currently shows (text, dropdowns, years, sort, page size) to the API,
+  // so the results always match the visible inputs. Returns false when the year range is invalid.
+  const applyFilters = (formFilters) => {
+    const minYear = formFilters.minYear.trim();
+    const maxYear = formFilters.maxYear.trim();
+    const message = validateYearRange(minYear, maxYear);
+
+    if (message) {
+      setValidationError(message);
+      return false;
+    }
+
+    setValidationError("");
+    setCriteria({
+      ...formFilters,
+      minYear: minYear || undefined,
+      maxYear: maxYear || undefined,
+      minPrice: undefined,
+      maxPrice: undefined,
+      maxPriceInclusive: undefined,
+      ...getPriceBounds(formFilters.priceRange),
+      page: 0,
+      size: Number(formFilters.size),
+    });
+    return true;
+  };
+
   const handleFilterChange = (event) => {
     const { name, value } = event.target;
     const nextFilters = {
@@ -158,7 +207,6 @@ export default function App() {
       [name]: value,
       ...(name === "make" && value !== filters.make ? { model: "" } : {}),
     };
-    const searchableFields = ["q", "make", "model", "condition", "minYear", "maxYear", "priceRange"];
     const hasSearchFilters = searchableFields.some((field) => nextFilters[field].trim() !== "");
     const hadSubmittedSearch = searchableFields.some((field) => {
       const value = criteria[field];
@@ -169,67 +217,34 @@ export default function App() {
     setValidationError("");
     setError("");
 
-    if (!hasSearchFilters && hadSubmittedSearch) {
-      setCriteria({ ...initialCriteria });
-    } else if (["make", "model", "condition", "priceRange"].includes(name)) {
-      const priceBounds = getPriceBounds(nextFilters.priceRange);
-
-      setCriteria((current) => ({
-        ...current,
-        make: nextFilters.make,
-        model: nextFilters.model,
-        condition: nextFilters.condition,
-        priceRange: nextFilters.priceRange,
-        minPrice: undefined,
-        maxPrice: undefined,
-        maxPriceInclusive: undefined,
-        ...priceBounds,
-        page: 0,
-      }));
+    // Clearing the last filter restores the default results (keeping the chosen sort and page size),
+    // and dropdowns apply immediately together with any text or years already typed.
+    if ((!hasSearchFilters && hadSubmittedSearch) || instantFields.includes(name)) {
+      applyFilters(nextFilters);
     }
   };
 
   const handleSubmit = (event) => {
     event.preventDefault();
-    const minYear = filters.minYear.trim();
-    const maxYear = filters.maxYear.trim();
-
-    if (minYear && maxYear && Number(minYear) > Number(maxYear)) {
-      setValidationError("Minimum year must be less than or equal to maximum year.");
-      return;
-    }
-
-    for (const year of [minYear, maxYear]) {
-      if (year && (!Number.isInteger(Number(year)) || Number(year) < 1886 || Number(year) > 2100)) {
-        setValidationError("Enter a year between 1886 and 2100.");
-        return;
-      }
-    }
-
-    setValidationError("");
-    const priceBounds = getPriceBounds(filters.priceRange);
-
-    setCriteria({
-      ...filters,
-      minYear: minYear || undefined,
-      maxYear: maxYear || undefined,
-      minPrice: undefined,
-      maxPrice: undefined,
-      maxPriceInclusive: undefined,
-      ...priceBounds,
-      page: 0,
-      size: Number(filters.size),
-    });
+    applyFilters(filters);
   };
 
   const handleClear = () => {
     setFilters(initialFilters);
     setValidationError("");
+    setAiQuery("");
+    setAiQuestion("");
+    setAiClarification("");
+    setAiError("");
     setCriteria({ ...initialCriteria });
   };
 
   const handlePageChange = useCallback((page) => {
     setCriteria((current) => ({ ...current, page }));
+    const results = document.querySelector(".results");
+    if (results && results.getBoundingClientRect().top < 0) {
+      scrollToElement(".results");
+    }
   }, []);
 
   const handleSortChange = ({ sortBy, direction }) => {
@@ -254,7 +269,7 @@ export default function App() {
   }, []);
 
   const showFilters = () => {
-    document.querySelector(".search-panel")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    scrollToElement(".search-panel");
   };
 
   const handleRetry = useCallback(() => {
@@ -331,6 +346,7 @@ export default function App() {
             error={error}
             onPageChange={handlePageChange}
             onRetry={handleRetry}
+            onReset={handleClear}
             criteria={criteria}
             onSortChange={handleSortChange}
             onPageSizeChange={handlePageSizeChange}

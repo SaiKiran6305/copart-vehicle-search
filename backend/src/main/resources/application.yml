@@ -15,7 +15,9 @@ spring:
         format_sql: true
   h2:
     console:
-      enabled: true
+      # Off by default so the database console is never exposed on the public deployment.
+      # Run locally with H2_CONSOLE_ENABLED=true to use it at /h2-console.
+      enabled: ${H2_CONSOLE_ENABLED:false}
 
 server:
   port: ${PORT:8080}
