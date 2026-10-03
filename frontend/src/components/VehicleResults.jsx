@@ -9,6 +9,11 @@ export default function VehicleResults({
   error,
   onPageChange,
   onRetry,
+  criteria,
+  onSortChange,
+  onPageSizeChange,
+  favoriteIds,
+  onFavoriteToggle,
 }) {
   if (isLoading) {
     return <LoadingState />;
@@ -40,18 +45,52 @@ export default function VehicleResults({
             {result.totalElements === 1 ? "vehicle" : "vehicles"}
           </h2>
         </div>
-        <p className="results__page-summary">
-          Showing {result.number * result.size + 1}–
-          {Math.min((result.number + 1) * result.size, result.totalElements)} of{" "}
-          {result.totalElements.toLocaleString()}
-        </p>
+        <div className="results__controls">
+          <p className="results__page-summary">
+            Showing {result.number * result.size + 1}–
+            {Math.min((result.number + 1) * result.size, result.totalElements)} of{" "}
+            {result.totalElements.toLocaleString()}
+          </p>
+          <label className="results__sort" htmlFor="sort-choice">
+            <span>Sort</span>
+            <select
+              id="sort-choice"
+              value={`${criteria.sortBy}:${criteria.direction}`}
+              onChange={(event) => {
+                const [sortBy, direction] = event.target.value.split(":");
+                onSortChange({ sortBy, direction });
+              }}
+            >
+              <option value="saleDate:asc">Sale date: Earliest first</option>
+              <option value="saleDate:desc">Sale date: Latest first</option>
+              <option value="year:desc">Year: Newest first</option>
+              <option value="year:asc">Year: Oldest first</option>
+              <option value="estimatedValue:asc">Value: Low to high</option>
+              <option value="estimatedValue:desc">Value: High to low</option>
+              <option value="odometer:asc">Odometer: Low to high</option>
+              <option value="odometer:desc">Odometer: High to low</option>
+              <option value="make:asc">Make: A to Z</option>
+              <option value="make:desc">Make: Z to A</option>
+            </select>
+          </label>
+        </div>
       </div>
       <div className="vehicle-grid">
         {result.content.map((vehicle) => (
-          <VehicleCard key={vehicle.id} vehicle={vehicle} />
+          <VehicleCard
+            key={vehicle.id}
+            vehicle={vehicle}
+            isFavorite={favoriteIds.includes(vehicle.id)}
+            onFavoriteToggle={onFavoriteToggle}
+          />
         ))}
       </div>
-      <Pagination result={result} onPageChange={onPageChange} />
+      <Pagination
+        result={result}
+        onPageChange={onPageChange}
+        pageSize={criteria.size}
+        onPageSizeChange={onPageSizeChange}
+      />
     </section>
   );
 }

@@ -1,13 +1,13 @@
 :root {
   font-family: "Avenir Next", "Segoe UI", sans-serif;
   color: #18243a;
-  background: #f4f6f9;
+  background: #f3f6fa;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   --navy: #0b1d39;
-  --blue: #1457d9;
-  --blue-dark: #1048b8;
+  --blue: #2662d9;
+  --blue-dark: #063598;
   --muted: #6d7889;
   --line: #e7eaf0;
   --surface: #ffffff;
@@ -48,8 +48,9 @@ a:focus-visible {
   align-items: center;
   justify-content: space-between;
   padding: 0 max(6vw, calc((100vw - 1320px) / 2));
-  background: var(--navy);
-  color: #fff;
+  border-bottom: 1px solid #e7ebf1;
+  background: #fff;
+  color: var(--navy);
 }
 
 .brand {
@@ -72,16 +73,24 @@ a:focus-visible {
   letter-spacing: 0.16em;
 }
 
+.brand img {
+  display: block;
+  width: 126px;
+  height: 50px;
+  object-fit: contain;
+  object-position: left center;
+}
+
 .hero {
   position: relative;
-  min-height: 286px;
+  min-height: 238px;
   display: flex;
   align-items: center;
   overflow: hidden;
   padding: 44px max(6vw, calc((100vw - 1320px) / 2));
   background:
-    radial-gradient(ellipse at 80% 120%, rgb(44 106 211 / 55%), transparent 45%),
-    linear-gradient(112deg, #10264a 0%, #123d78 67%, #1c55a1 100%);
+    radial-gradient(ellipse at 82% 115%, rgb(82 146 245 / 42%), transparent 44%),
+    linear-gradient(112deg, #10264a 0%, #174a91 66%, #2862b4 100%);
   color: #fff;
 }
 
@@ -171,7 +180,7 @@ a:focus-visible {
   position: absolute;
   top: 52px;
   right: 22%;
-  color: #ffda70;
+  color: #f4a27f;
   font-size: 30px;
 }
 
@@ -194,14 +203,15 @@ a:focus-visible {
 }
 
 .search-panel {
-  padding: 27px 30px 24px;
+  padding: 22px 26px 24px;
+  scroll-margin-top: 88px;
 }
 
-.search-panel__heading {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  margin-bottom: 20px;
+.search-panel__top-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 16px;
 }
 
 .search-panel h2,
@@ -254,7 +264,7 @@ a:focus-visible {
   display: grid;
   grid-template-columns: repeat(4, minmax(120px, 1fr));
   gap: 17px 14px;
-  margin-top: 20px;
+  margin-top: 17px;
 }
 
 .form-control,
@@ -314,7 +324,7 @@ a:focus-visible {
   display: flex;
   align-items: center;
   gap: 10px;
-  margin-top: 21px;
+  margin: 0;
 }
 
 .button {
@@ -366,6 +376,48 @@ a:focus-visible {
   background: #f8faff;
 }
 
+.button--text {
+  padding-inline: 8px;
+  background: transparent;
+  color: #51627a;
+}
+
+.button--text:hover:not(:disabled) {
+  color: var(--blue-dark);
+  background: #f1f5fc;
+}
+
+.sticky-search {
+  position: fixed;
+  z-index: 20;
+  top: 0;
+  left: 0;
+  width: 100%;
+  padding: 10px 6%;
+  border-bottom: 1px solid #e5eaf2;
+  background: rgb(255 255 255 / 96%);
+  box-shadow: 0 5px 22px rgb(21 39 72 / 10%);
+  backdrop-filter: blur(12px);
+  animation: reveal-search 150ms ease-out;
+}
+
+.sticky-search__form {
+  width: min(1320px, 100%);
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 12px;
+  margin: auto;
+}
+
+.sticky-search .search-field {
+  min-height: 42px;
+}
+
+@keyframes reveal-search {
+  from { opacity: 0; transform: translateY(-8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
 .form-error {
   margin: 15px 0 0;
   color: #b42318;
@@ -396,6 +448,36 @@ a:focus-visible {
   font-size: 12px;
 }
 
+.results__controls {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 18px;
+}
+
+.results__sort,
+.pagination__size {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  color: #637186;
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.results__sort select,
+.pagination__size select {
+  height: 38px;
+  max-width: 250px;
+  padding: 0 30px 0 10px;
+  border: 1px solid #dfe5ee;
+  border-radius: 7px;
+  background: #fff;
+  color: #2e3c52;
+  font-size: 12px;
+}
+
 .vehicle-grid {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -419,13 +501,56 @@ a:focus-visible {
 
 .vehicle-card__visual {
   position: relative;
-  min-height: 124px;
+  min-height: 148px;
   display: grid;
   place-items: center;
   overflow: hidden;
   background:
     radial-gradient(ellipse at 50% 110%, rgb(122 162 226 / 30%), transparent 58%),
     linear-gradient(135deg, #edf3fc, #f7f9fc);
+}
+
+.favorite-button {
+  position: absolute;
+  z-index: 2;
+  top: 10px;
+  right: 10px;
+  width: 35px;
+  height: 35px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 1px solid rgb(218 226 238 / 90%);
+  border-radius: 50%;
+  background: rgb(255 255 255 / 94%);
+  color: #53647c;
+  cursor: pointer;
+  transition: color 130ms ease, background 130ms ease, transform 130ms ease;
+}
+
+.favorite-button:hover {
+  transform: scale(1.06);
+  color: #ca513e;
+}
+
+.favorite-button svg {
+  width: 18px;
+  height: 18px;
+  fill: transparent;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.favorite-button.is-favorite {
+  border-color: #f4c6b7;
+  background: #fff1ec;
+  color: #ce563f;
+}
+
+.favorite-button.is-favorite svg {
+  fill: currentColor;
 }
 
 .vehicle-card__visual::before,
@@ -469,7 +594,7 @@ a:focus-visible {
   z-index: 1;
   display: block;
   width: 100%;
-  height: 124px;
+  height: 148px;
   object-fit: contain;
   object-position: center;
   padding: 6px 8px;
@@ -584,6 +709,12 @@ a:focus-visible {
   justify-content: space-between;
   gap: 15px;
   border-top: 1px solid #edf0f4;
+}
+
+.pagination__controls {
+  display: flex;
+  align-items: center;
+  gap: 18px;
 }
 
 .pagination p {
@@ -723,10 +854,12 @@ a:focus-visible {
     grid-template-columns: repeat(3, minmax(120px, 1fr));
   }
 
-  .hero__art {
-    left: 48%;
+  .vehicle-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
+}
 
+@media (max-width: 760px) {
   .vehicle-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
@@ -739,8 +872,8 @@ a:focus-visible {
   }
 
   .hero {
-    min-height: 240px;
-    padding: 35px 6% 55px;
+    min-height: 205px;
+    padding: 30px 6% 48px;
   }
 
   .hero__art {
@@ -759,11 +892,16 @@ a:focus-visible {
   }
 
   .content-wrap {
-    margin-top: -25px;
+    margin-top: -27px;
   }
 
   .search-panel {
-    padding: 20px 17px;
+    padding: 17px 15px 19px;
+  }
+
+  .search-panel__top-row {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 11px;
   }
 
   .search-panel h2 {
@@ -791,8 +929,23 @@ a:focus-visible {
   }
 
   .search-actions {
-    display: grid;
-    grid-template-columns: 1fr auto;
+    justify-content: space-between;
+  }
+
+  .search-actions .button--primary {
+    flex: 1;
+  }
+
+  .sticky-search {
+    padding: 8px 4%;
+  }
+
+  .sticky-search__form {
+    gap: 8px;
+  }
+
+  .sticky-search__form .button {
+    padding-inline: 11px;
   }
 
   .results {
@@ -805,6 +958,23 @@ a:focus-visible {
     gap: 7px;
   }
 
+  .results__controls {
+    width: 100%;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 10px;
+  }
+
+  .results__sort {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .results__sort select {
+    flex: 1;
+    max-width: none;
+  }
+
   .vehicle-grid {
     grid-template-columns: minmax(0, 1fr);
     gap: 13px;
@@ -812,6 +982,20 @@ a:focus-visible {
 
   .pagination {
     min-height: 63px;
+  }
+
+  .pagination__controls {
+    gap: 8px;
+  }
+
+  .pagination__size > span {
+    display: none;
+  }
+
+  .pagination__size select {
+    width: 70px;
+    height: 36px;
+    padding-inline: 8px;
   }
 
   .pagination__buttons .button {
