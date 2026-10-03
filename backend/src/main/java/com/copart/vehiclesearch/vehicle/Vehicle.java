@@ -21,11 +21,10 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 
 @Entity
+// Make, model, damage and condition are compared in lower case (lower(make) = ?), which a plain
+// index can't serve, so only the year range has an index.
 @Table(name = "vehicles", indexes = {
-        @Index(name = "idx_vehicle_make_model", columnList = "make, model"),
-        @Index(name = "idx_vehicle_year", columnList = "model_year"),
-        @Index(name = "idx_vehicle_condition", columnList = "condition"),
-        @Index(name = "idx_vehicle_primary_damage", columnList = "primary_damage")
+        @Index(name = "idx_vehicle_year", columnList = "model_year")
 })
 @Check(constraints = "model_year BETWEEN 1886 AND 2100 AND odometer >= 0 AND estimated_value >= 0")
 public class Vehicle {

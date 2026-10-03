@@ -61,18 +61,6 @@ a:focus-visible {
   text-decoration: none;
 }
 
-.brand__text {
-  display: grid;
-  gap: 1px;
-  letter-spacing: 0.1em;
-}
-
-.brand__text strong {
-  font-family: "Avenir Next", "Segoe UI", sans-serif;
-  font-size: 15px;
-  letter-spacing: 0.16em;
-}
-
 .brand img {
   display: block;
   width: 112px;
@@ -106,10 +94,6 @@ a:focus-visible {
   font-weight: 700;
   letter-spacing: 0.13em;
   text-transform: uppercase;
-}
-
-.eyebrow--light {
-  color: #a9c5f6;
 }
 
 .hero h1 {
@@ -194,7 +178,6 @@ a:focus-visible {
 .search-panel,
 .results,
 .empty-state,
-.loading-state,
 .error-state {
   border: 1px solid #e9edf3;
   border-radius: 15px;
@@ -685,8 +668,6 @@ a:focus-visible {
   fill: currentColor;
 }
 
-
-
 .vehicle-card__visual-year {
   position: absolute;
   z-index: 1;
@@ -827,20 +808,6 @@ a:focus-visible {
   background: #9aa5b5;
 }
 
-.vehicle-card__representative {
-  position: absolute;
-  left: 12px;
-  bottom: 12px;
-  z-index: 2;
-  padding: 4px 7px;
-  border-radius: 5px;
-  background: rgb(255 255 255 / 88%);
-  color: #4d5a6d;
-  font-size: 9px;
-  font-weight: 600;
-  letter-spacing: 0.02em;
-}
-
 .vehicle-card__details dt,
 .vehicle-card__value > span {
   color: var(--muted);
@@ -900,7 +867,6 @@ a:focus-visible {
 }
 
 .empty-state,
-.loading-state,
 .error-state {
   margin-top: 24px;
 }
@@ -982,16 +948,6 @@ a:focus-visible {
   color: var(--muted);
   font-size: 13px;
   line-height: 1.5;
-}
-
-.loading-state {
-  display: flex;
-  min-height: 180px;
-  align-items: center;
-  justify-content: center;
-  gap: 12px;
-  color: #657287;
-  font-size: 13px;
 }
 
 .skeleton {
