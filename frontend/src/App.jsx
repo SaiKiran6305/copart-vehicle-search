@@ -63,8 +63,21 @@ export default function App() {
 
   const handleFilterChange = (event) => {
     const { name, value } = event.target;
-    setFilters((current) => ({ ...current, [name]: value }));
+    const nextFilters = { ...filters, [name]: value };
+    const searchableFields = ["q", "make", "model", "condition", "minYear", "maxYear"];
+    const hasSearchFilters = searchableFields.some((field) => nextFilters[field].trim() !== "");
+    const hadSubmittedSearch = searchableFields.some((field) => {
+      const value = criteria[field];
+      return value !== undefined && value !== null && String(value).trim() !== "";
+    });
+
+    setFilters(nextFilters);
     setValidationError("");
+    setError("");
+
+    if (!hasSearchFilters && hadSubmittedSearch) {
+      setCriteria({ ...initialCriteria });
+    }
   };
 
   const handleSubmit = (event) => {
@@ -112,18 +125,10 @@ export default function App() {
     <div className="app-shell">
       <header className="site-header">
         <a className="brand" href="/" aria-label="Copart Vehicle Search home">
-          <span className="brand__mark" aria-hidden="true">
-            C
-          </span>
           <span className="brand__text">
             <strong>COPART</strong>
-            <small>VEHICLE SEARCH</small>
           </span>
         </a>
-        <span className="header-tag">
-          <span className="status-dot" />
-          Prototype inventory
-        </span>
       </header>
 
       <main>
@@ -164,7 +169,7 @@ export default function App() {
 
       <footer className="site-footer">
         <span>Copart Vehicle Search</span>
-        <span>Demonstration prototype · Synthetic listings only</span>
+        <span>Sample auction data · For demonstration only</span>
       </footer>
     </div>
   );

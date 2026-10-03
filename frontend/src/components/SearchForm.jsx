@@ -15,7 +15,6 @@ export default function SearchForm({
           <p className="eyebrow">Find your next vehicle</p>
           <h2>Search inventory</h2>
         </div>
-        <span className="synthetic-note">Synthetic auction listings</span>
       </div>
 
       <label className="search-field" htmlFor="query">
