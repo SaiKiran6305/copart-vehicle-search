@@ -15,6 +15,16 @@ const date = new Intl.DateTimeFormat("en-US", {
   timeZone: "UTC",
 });
 
+// "Sale in 4 days" for sales within the next two weeks; nothing for later or past sales.
+export function saleCountdown(saleDate, today = new Date()) {
+  if (!saleDate) return "";
+  const todayUtc = Date.UTC(today.getFullYear(), today.getMonth(), today.getDate());
+  const days = Math.round((Date.parse(`${saleDate}T00:00:00Z`) - todayUtc) / 86400000);
+  if (Number.isNaN(days) || days < 0 || days > 14) return "";
+  if (days === 0) return "Sale today";
+  return days === 1 ? "Sale tomorrow" : `Sale in ${days} days`;
+}
+
 function formatDate(value) {
   return value ? date.format(new Date(`${value}T00:00:00Z`)) : "—";
 }
@@ -22,6 +32,7 @@ function formatDate(value) {
 export default function VehicleCard({ vehicle, isAboveTheFold = false, isFavorite, onFavoriteToggle }) {
   const image = getVehicleImage(vehicle);
   const name = `${vehicle.year} ${vehicle.make} ${vehicle.model}`;
+  const countdown = saleCountdown(vehicle.saleDate);
 
   return (
     <article className="vehicle-card" aria-label={name}>
@@ -38,6 +49,7 @@ export default function VehicleCard({ vehicle, isAboveTheFold = false, isFavorit
           decoding="async"
         />
         <span className="vehicle-card__visual-year">{vehicle.year}</span>
+        {countdown && <span className="vehicle-card__countdown">{countdown}</span>}
         <span className="vehicle-card__lot">{vehicle.lotNumber}</span>
         <button
           className={`favorite-button${isFavorite ? " is-favorite" : ""}`}
