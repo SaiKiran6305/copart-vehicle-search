@@ -223,8 +223,31 @@ describe("vehicle search interactions", () => {
     expect(screen.getByLabelText("Estimated value")).toHaveValue("up-to-20000");
     expect(screen.getByLabelText("AI interpreted filters")).toHaveTextContent("Toyota");
     expect(screen.getByLabelText("AI interpreted filters")).toHaveTextContent("Up to $20,000");
+    await user.click(screen.getByRole("button", { name: "Search vehicles" }));
+    await waitFor(() => {
+      expect(screen.queryByLabelText("AI interpreted filters")).not.toBeInTheDocument();
+    });
     await user.click(screen.getByRole("button", { name: "Clear filters" }));
     expect(screen.getByRole("searchbox", { name: /search by vehicle/i })).toHaveValue("");
+    expect(screen.queryByLabelText("AI interpreted filters")).not.toBeInTheDocument();
+  });
+
+  it("clears the AI interpretation when the user changes an applied filter", async () => {
+    const user = userEvent.setup();
+    global.fetch = vi.fn(async (url) => url === "/api/ai-search"
+      ? { ok: true, json: async () => ({
+          status: "READY",
+          filters: { q: "Dallas", make: "Toyota", model: null, primaryDamage: null, condition: null,
+            minYear: null, maxYear: null, maxPriceInclusive: 20000 },
+        }) }
+      : { ok: true, json: async () => makePage() });
+    render(<App />);
+    await screen.findByRole("heading", { name: "300 vehicles" });
+    await user.type(screen.getByRole("searchbox", { name: /search by vehicle/i }), "Toyota under $20,000 near Dallas");
+    await user.click(screen.getByRole("button", { name: "Ask AI" }));
+    expect(await screen.findByLabelText("AI interpreted filters")).toHaveTextContent("Toyota");
+
+    await user.selectOptions(screen.getByLabelText("Make"), "Honda");
     expect(screen.queryByLabelText("AI interpreted filters")).not.toBeInTheDocument();
   });
 

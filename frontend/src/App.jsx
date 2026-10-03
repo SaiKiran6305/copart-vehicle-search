@@ -247,7 +247,12 @@ export default function App() {
     const { name, value } = event.target;
     aiRequestVersion.current += 1;
     setIsAiLoading(false);
-    if (name !== "q") setAiChips([]);
+    // The interpretation summary describes the filters produced by one AI request.
+    // Once the user edits any value, or starts changing the search text, clear it.
+    setAiChips([]);
+    setAiQuestion("");
+    setPendingAiQuery("");
+    setAiClarification("");
     const nextFilters = {
       ...filters,
       [name]: value,
@@ -285,6 +290,12 @@ export default function App() {
       applyFilters(nextFilters);
       return;
     }
+    // A regular keyword search is now in control; don't leave a stale AI summary
+    // attached to the newly submitted search.
+    setAiChips([]);
+    setAiQuestion("");
+    setPendingAiQuery("");
+    setAiClarification("");
     applyFilters(filters);
   };
 
