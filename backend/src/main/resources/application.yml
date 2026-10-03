@@ -13,10 +13,6 @@ spring:
     properties:
       hibernate:
         format_sql: true
-  mvc:
-    # Errors are returned as RFC 9457 problem details: {"status":400,"detail":"...", ...}
-    problemdetails:
-      enabled: true
   h2:
     console:
       # Off by default so the database console is never exposed on the public deployment.
