@@ -23,7 +23,10 @@ const emptyResult = {
   last: true,
 };
 
-const savedVehiclesKey = "copart:saved-vehicle-ids:v1";
+// Saved vehicles are stored by lot number, which stays the same across deploys.
+// (Version 1 stored database ids, which can point to a different car after the data is reloaded.)
+const savedVehiclesKey = "copart:saved-lot-numbers:v2";
+const legacySavedVehiclesKey = "copart:saved-vehicle-ids:v1";
 
 const searchableFields = ["q", "make", "model", "primaryDamage", "condition", "minYear", "maxYear", "priceRange"];
 const instantFields = ["make", "model", "primaryDamage", "condition", "priceRange"];
@@ -35,10 +38,11 @@ function scrollToElement(selector) {
   element.scrollIntoView({ behavior: reduceMotion ? "auto" : "smooth", block: "start" });
 }
 
-function readSavedVehicleIds() {
+function readSavedLotNumbers() {
   try {
+    window.localStorage.removeItem(legacySavedVehiclesKey);
     const saved = JSON.parse(window.localStorage.getItem(savedVehiclesKey) || "[]");
-    return Array.isArray(saved) ? saved : [];
+    return Array.isArray(saved) ? saved.filter((lot) => typeof lot === "string") : [];
   } catch {
     return [];
   }
@@ -57,7 +61,7 @@ export default function App() {
   const [error, setError] = useState("");
   const [validationError, setValidationError] = useState("");
   const [requestVersion, setRequestVersion] = useState(0);
-  const [favoriteIds, setFavoriteIds] = useState(readSavedVehicleIds);
+  const [savedLotNumbers, setSavedLotNumbers] = useState(readSavedLotNumbers);
   const [showStickySearch, setShowStickySearch] = useState(false);
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [aiClarification, setAiClarification] = useState("");
@@ -70,20 +74,20 @@ export default function App() {
 
   useEffect(() => {
     try {
-      window.localStorage.setItem(savedVehiclesKey, JSON.stringify(favoriteIds));
+      window.localStorage.setItem(savedVehiclesKey, JSON.stringify(savedLotNumbers));
     } catch {
       // Keep favorites usable for the current session when storage is unavailable.
     }
-  }, [favoriteIds]);
+  }, [savedLotNumbers]);
 
   useEffect(() => {
     const syncFavorites = (event) => {
       if (event.key !== savedVehiclesKey && event.key !== null) return;
       try {
         const saved = JSON.parse(event.newValue || "[]");
-        setFavoriteIds(Array.isArray(saved) ? saved : []);
+        setSavedLotNumbers(Array.isArray(saved) ? saved : []);
       } catch {
-        setFavoriteIds([]);
+        setSavedLotNumbers([]);
       }
     };
     window.addEventListener("storage", syncFavorites);
@@ -360,10 +364,10 @@ export default function App() {
     setCriteria((current) => ({ ...current, size: pageSize, page: 0 }));
   };
 
-  const handleFavoriteToggle = useCallback((vehicleId) => {
-    setFavoriteIds((current) => current.includes(vehicleId)
-      ? current.filter((id) => id !== vehicleId)
-      : [...current, vehicleId]);
+  const handleFavoriteToggle = useCallback((lotNumber) => {
+    setSavedLotNumbers((current) => current.includes(lotNumber)
+      ? current.filter((saved) => saved !== lotNumber)
+      : [...current, lotNumber]);
   }, []);
 
   const showFilters = () => {
@@ -452,7 +456,7 @@ export default function App() {
             criteria={criteria}
             onSortChange={handleSortChange}
             onPageSizeChange={handlePageSizeChange}
-            favoriteIds={favoriteIds}
+            savedLotNumbers={savedLotNumbers}
             onFavoriteToggle={handleFavoriteToggle}
           />
         </div>

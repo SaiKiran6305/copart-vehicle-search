@@ -26,14 +26,25 @@ export async function searchVehicles(criteria, signal) {
 
   const response = await fetch(`/api/vehicles?${params.toString()}`, { signal });
   if (!response.ok) {
+    const detail = await problemDetail(response);
     throw new Error(
       response.status === 400
-        ? "Some search options are invalid. Check the filters and try again."
+        ? detail || "Some search options are invalid. Check the filters and try again."
         : `Vehicle search failed (HTTP ${response.status}). Please try again.`,
     );
   }
 
   return response.json();
+}
+
+// The server explains errors in an RFC 9457 problem detail: { "status": 400, "detail": "..." }.
+async function problemDetail(response) {
+  try {
+    const body = await response.json();
+    return typeof body?.detail === "string" ? body.detail : "";
+  } catch {
+    return "";
+  }
 }
 
 export async function interpretVehicleSearch(query, clarification = "") {

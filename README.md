@@ -14,7 +14,7 @@ All vehicle records are synthetic. This project does not use or represent live C
 - Search with regular keywords using **Search** or Enter, or send the same text to **Ask AI** to interpret it into supported filters.
 - Ask AI can return a clarification question. When it can interpret the request, the UI applies the filters through the same vehicle-search endpoint and keeps any remaining keyword (such as a location) in the search field.
 - Share or reload a search using its URL. Browser Back and Forward restore prior applied searches.
-- Save vehicles in browser local storage. Saved vehicles synchronize across tabs in the same browser profile, but not across devices or separate profiles.
+- Save vehicles in browser local storage, by lot number. Saved vehicles synchronize across tabs in the same browser profile, but not across devices or separate profiles.
 - View loading, validation, service-error, and no-results states. For very small result sets, the UI can suggest removing an active filter.
 
 ## Technologies
@@ -78,7 +78,7 @@ GET /api/vehicles?q=Dallas&make=Toyota&page=0&size=12&sortBy=saleDate&direction=
 
 | Parameter | Behavior |
 | --- | --- |
-| `q` | Case-insensitive partial match across lot number, make, model, and location. For example, `q=Dallas` matches a location containing “Dallas”. |
+| `q` | Case-insensitive keyword search. Every word must match the make, model, location, or lot number (or the year, for a four-digit number), so `toyota dallas` and `2018 camry` work. Filler words such as `in` and `near` are ignored, and numbers shorter than four digits are not matched against lot numbers, so `model 3` finds Model 3s. |
 | `make`, `model` | Case-insensitive exact matches. |
 | `primaryDamage`, `condition` | Case-insensitive exact matches. Damage and condition are separate fields. |
 | `minYear`, `maxYear` | Inclusive year bounds. The API rejects an inverted range. |
@@ -91,7 +91,7 @@ GET /api/vehicles?q=Dallas&make=Toyota&page=0&size=12&sortBy=saleDate&direction=
 
 The response contains `content` plus `number`, `size`, `totalElements`, `totalPages`, `first`, and `last`. Each vehicle includes `id`, `lotNumber`, `year`, `make`, `model`, `primaryDamage`, `condition`, `location`, `saleDate`, `odometer`, and `estimatedValue`.
 
-The API returns HTTP 400 for invalid page or size values, unsupported sort values, inverted year ranges, or negative/conflicting/inverted price bounds. The UI uses zero-based page indexes for API requests and displays page numbers starting at one in the URL.
+The API returns HTTP 400 for invalid page or size values, unsupported sort values, inverted year ranges, negative/conflicting/inverted price bounds, or values of the wrong type. Errors use the [RFC 9457](https://www.rfc-editor.org/rfc/rfc9457) problem-detail format and say what to fix, for example `{"status":400,"title":"Bad Request","detail":"size must be between 1 and 100."}`; the UI shows the `detail` text. The AI search rate limit (HTTP 429) uses the same format. The UI uses zero-based page indexes for API requests and displays page numbers starting at one in the URL.
 
 ### AI interpretation API
 

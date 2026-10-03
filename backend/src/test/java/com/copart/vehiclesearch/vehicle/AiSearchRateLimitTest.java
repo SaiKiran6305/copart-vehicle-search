@@ -9,7 +9,9 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.hamcrest.Matchers.startsWith;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 // No OpenAI key is configured here, so allowed calls return 503 without reaching OpenAI.
@@ -39,7 +41,8 @@ class AiSearchRateLimitTest {
 
         mockMvc.perform(aiSearchFrom("203.0.113.10"))
                 .andExpect(status().isTooManyRequests())
-                .andExpect(header().exists("Retry-After"));
+                .andExpect(header().exists("Retry-After"))
+                .andExpect(jsonPath("$.detail", startsWith("Too many AI searches.")));
 
         mockMvc.perform(aiSearchFrom("203.0.113.11")).andExpect(status().isServiceUnavailable());
     }
