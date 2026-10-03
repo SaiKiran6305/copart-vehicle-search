@@ -1,6 +1,12 @@
 import FilterPanel from "./FilterPanel.jsx";
 import SearchControls from "./SearchControls.jsx";
 
+// A "Did you mean Toyota Corolla?" question can be answered with one click. Questions offering a
+// choice ("…, or another Honda?") or asking for details still need a typed answer.
+export function isConfirmationQuestion(question) {
+  return /^\s*(did|do) you mean\b/i.test(question) && !/\bor\b/i.test(question);
+}
+
 export default function SearchForm({
   filters,
   searchValue,
@@ -20,6 +26,8 @@ export default function SearchForm({
   isAiLoading,
   isClarifying,
   onAiSearch,
+  onAiAnswer,
+  onAiCancel,
 }) {
   return (
     <form className={`search-panel${filtersOpen ? " filters-open" : ""}`} onSubmit={onSubmit} noValidate>
@@ -37,6 +45,21 @@ export default function SearchForm({
         <div className="ai-followup" role="status">
           <p>{aiQuestion}</p>
           <span>Original request: “{aiOriginalQuery}”</span>
+          {isConfirmationQuestion(aiQuestion) && (
+            <div className="ai-followup__actions">
+              <button
+                className="button button--primary"
+                type="button"
+                onClick={() => onAiAnswer("Yes")}
+                disabled={isAiLoading}
+              >
+                {isAiLoading ? "Searching…" : "Yes"}
+              </button>
+              <button className="button button--secondary" type="button" onClick={onAiCancel} disabled={isAiLoading}>
+                No, edit my search
+              </button>
+            </div>
+          )}
         </div>
       )}
       {aiChips.length > 0 && (

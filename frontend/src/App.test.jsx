@@ -282,6 +282,78 @@ describe("vehicle search interactions", () => {
     expect(screen.getByRole("searchbox", { name: /search by vehicle/i })).toHaveValue("");
   });
 
+  it("answers a 'Did you mean' question with one click on Yes and runs the search", async () => {
+    const user = userEvent.setup();
+    const aiCalls = [];
+    global.fetch = vi.fn(async (url, options = {}) => {
+      if (url === "/api/ai-search") {
+        aiCalls.push(JSON.parse(options.body));
+        return aiCalls.length === 1
+          ? { ok: true, json: async () => ({ status: "CLARIFICATION", question: "Did you mean Toyota Corolla?" }) }
+          : { ok: true, json: async () => ({ status: "READY", filters: {
+              q: null, make: "Toyota", model: "Corolla", primaryDamage: null, condition: null,
+              minYear: null, maxYear: null, maxPriceInclusive: null,
+            } }) };
+      }
+      return { ok: true, json: async () => makePage() };
+    });
+    render(<App />);
+    await screen.findByRole("heading", { name: "300 vehicles" });
+    await user.type(screen.getByRole("searchbox", { name: /search by vehicle/i }), "toyota corolle");
+    await user.click(screen.getByRole("button", { name: "Ask AI" }));
+    expect(await screen.findByText("Did you mean Toyota Corolla?")).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Yes" }));
+
+    await waitFor(() => expect(aiCalls).toHaveLength(2));
+    expect(aiCalls[1]).toEqual({ query: "toyota corolle", clarification: "Yes" });
+    expect(await screen.findByLabelText("Make")).toHaveValue("Toyota");
+    expect(screen.getByLabelText("Model")).toHaveValue("Corolla");
+    await waitFor(() => {
+      const params = new URL(global.fetch.mock.calls.at(-1)[0], window.location.origin).searchParams;
+      expect(params.get("model")).toBe("Corolla");
+    });
+    expect(screen.queryByText("Did you mean Toyota Corolla?")).not.toBeInTheDocument();
+  });
+
+  it("puts the original text back to edit when the answer to 'Did you mean' is No", async () => {
+    const user = userEvent.setup();
+    const listFetch = global.fetch;
+    global.fetch = vi.fn(async (url, options) => (url === "/api/ai-search"
+      ? { ok: true, json: async () => ({ status: "CLARIFICATION", question: "Did you mean Toyota Corolla?" }) }
+      : listFetch(url, options)));
+    render(<App />);
+    await screen.findByRole("heading", { name: "300 vehicles" });
+    await user.type(screen.getByRole("searchbox", { name: /search by vehicle/i }), "toyota corolle");
+    await user.click(screen.getByRole("button", { name: "Ask AI" }));
+    await screen.findByText("Did you mean Toyota Corolla?");
+
+    await user.click(screen.getByRole("button", { name: "No, edit my search" }));
+
+    expect(screen.queryByText("Did you mean Toyota Corolla?")).not.toBeInTheDocument();
+    expect(screen.getByRole("searchbox", { name: /search by vehicle/i })).toHaveValue("toyota corolle");
+    expect(global.fetch.mock.calls.filter(([url]) => url === "/api/ai-search")).toHaveLength(1);
+  });
+
+  it("offers Yes only for questions that a yes answers", async () => {
+    const user = userEvent.setup();
+    const listFetch = global.fetch;
+    global.fetch = vi.fn(async (url, options) => (url === "/api/ai-search"
+      ? { ok: true, json: async () => ({
+          status: "CLARIFICATION",
+          question: "The Corolla is a Toyota model. Did you mean a Toyota Corolla, or another Honda?",
+        }) }
+      : listFetch(url, options)));
+    render(<App />);
+    await screen.findByRole("heading", { name: "300 vehicles" });
+    await user.type(screen.getByRole("searchbox", { name: /search by vehicle/i }), "honda corolla");
+    await user.click(screen.getByRole("button", { name: "Ask AI" }));
+    await screen.findByText(/or another Honda/);
+
+    expect(screen.queryByRole("button", { name: "Yes" })).not.toBeInTheDocument();
+    expect(screen.getByRole("searchbox", { name: "Answer the AI question" })).toBeInTheDocument();
+  });
+
   it("keeps a saved vehicle after the app is rendered again", async () => {
     const user = userEvent.setup();
     const firstRender = render(<App />);

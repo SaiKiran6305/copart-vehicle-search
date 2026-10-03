@@ -1,11 +1,14 @@
 package com.copart.vehiclesearch.vehicle;
 
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.io.InputStream;
 import java.math.BigDecimal;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -125,5 +128,20 @@ class AiSearchServiceTest {
         ResponseStatusException exception = assertThrows(ResponseStatusException.class,
                 () -> service.interpretOutput(ready(null, "Toyota", null, null, null, 2024, 2019, null)));
         assertEquals(HttpStatus.BAD_GATEWAY, exception.getStatusCode());
+    }
+
+    @Test
+    void instructionsListEveryMakeModelAndCityInTheSeedData() throws Exception {
+        // The model can only correct "Toyta" or "Dalls" to values it has been told about.
+        JsonNode vehicles;
+        try (InputStream seed = getClass().getResourceAsStream("/vehicles.json")) {
+            vehicles = new ObjectMapper().readTree(seed);
+        }
+        for (JsonNode vehicle : vehicles) {
+            String city = vehicle.path("location").asText().split(",")[0].trim();
+            for (String value : List.of(vehicle.path("make").asText(), vehicle.path("model").asText(), city)) {
+                assertTrue(AiSearchService.INSTRUCTIONS.contains(value), value + " is missing from the AI instructions");
+            }
+        }
     }
 }
