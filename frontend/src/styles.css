@@ -245,7 +245,16 @@ a:focus-visible {
 }
 
 .ai-followup p { margin: 0 0 4px; font-weight: 650; }
-.ai-followup span { color: var(--muted); font-size: 12px; }
+.ai-followup > span { color: var(--muted); font-size: 12px; }
+
+.ai-followup__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.ai-followup__actions .button { min-height: 32px; }
 
 .ai-interpretation {
   display: flex;

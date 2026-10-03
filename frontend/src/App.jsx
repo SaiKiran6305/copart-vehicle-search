@@ -205,8 +205,10 @@ export default function App() {
     setCriteria({ ...nextFilters, ...getPriceBounds(nextFilters.priceRange), page: 0, size: Number(nextFilters.size) });
   };
 
-  const runAiSearch = async () => {
-    const clarification = aiQuestion ? aiClarification.trim() : "";
+  // `answer` is set when the visitor clicks Yes under a "Did you mean …?" question;
+  // otherwise (the Ask AI button) the answer is whatever they typed.
+  const runAiSearch = async (answer) => {
+    const clarification = aiQuestion ? (typeof answer === "string" ? answer : aiClarification).trim() : "";
     const query = aiQuestion ? pendingAiQuery : filters.q.trim();
     if (!query) { setAiError("Enter a vehicle search description first."); return; }
     if (aiQuestion && !clarification) return;
@@ -228,6 +230,17 @@ export default function App() {
     } finally {
       if (requestVersion === aiRequestVersion.current) setIsAiLoading(false);
     }
+  };
+
+  // No to a "Did you mean …?" question: drop the question and put the original text back to edit.
+  const cancelAiQuestion = () => {
+    aiRequestVersion.current += 1;
+    setIsAiLoading(false);
+    setFilters((current) => ({ ...current, q: pendingAiQuery }));
+    setAiQuestion("");
+    setPendingAiQuery("");
+    setAiClarification("");
+    setAiError("");
   };
 
   // Sends everything the form currently shows (text, dropdowns, years, sort, page size) to the API,
@@ -428,6 +441,8 @@ export default function App() {
             isAiLoading={isAiLoading}
             isClarifying={Boolean(aiQuestion)}
             onAiSearch={runAiSearch}
+            onAiAnswer={runAiSearch}
+            onAiCancel={cancelAiQuestion}
           />
           {showStickySearch && (
             <div className="sticky-search" role="region" aria-label="Quick vehicle search">
