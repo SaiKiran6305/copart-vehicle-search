@@ -335,22 +335,53 @@ describe("vehicle search interactions", () => {
     expect(global.fetch.mock.calls.filter(([url]) => url === "/api/ai-search")).toHaveLength(1);
   });
 
-  it("offers Yes only for questions that a yes answers", async () => {
+  it("turns an either/or question into one button per choice", async () => {
     const user = userEvent.setup();
-    const listFetch = global.fetch;
-    global.fetch = vi.fn(async (url, options) => (url === "/api/ai-search"
-      ? { ok: true, json: async () => ({
-          status: "CLARIFICATION",
-          question: "The Corolla is a Toyota model. Did you mean a Toyota Corolla, or another Honda?",
-        }) }
-      : listFetch(url, options)));
+    const aiCalls = [];
+    global.fetch = vi.fn(async (url, options = {}) => {
+      if (url === "/api/ai-search") {
+        aiCalls.push(JSON.parse(options.body));
+        return aiCalls.length === 1
+          ? { ok: true, json: async () => ({
+              status: "CLARIFICATION", question: "Did you mean a Honda vehicle or a Toyota Corolla?",
+            }) }
+          : { ok: true, json: async () => ({ status: "READY", filters: {
+              q: null, make: "Toyota", model: "Corolla", primaryDamage: null, condition: null,
+              minYear: null, maxYear: null, maxPriceInclusive: null,
+            } }) };
+      }
+      return { ok: true, json: async () => makePage() };
+    });
     render(<App />);
     await screen.findByRole("heading", { name: "300 vehicles" });
     await user.type(screen.getByRole("searchbox", { name: /search by vehicle/i }), "honda corolla");
     await user.click(screen.getByRole("button", { name: "Ask AI" }));
-    await screen.findByText(/or another Honda/);
+    await screen.findByText("Did you mean a Honda vehicle or a Toyota Corolla?");
+
+    expect(screen.getByRole("button", { name: "Honda vehicle" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Neither, edit my search" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Yes" })).not.toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Toyota Corolla" }));
+
+    await waitFor(() => expect(aiCalls).toHaveLength(2));
+    expect(aiCalls[1]).toEqual({ query: "honda corolla", clarification: "Toyota Corolla" });
+    expect(await screen.findByLabelText("Model")).toHaveValue("Corolla");
+  });
+
+  it("asks for a typed answer when the question isn't a choice", async () => {
+    const user = userEvent.setup();
+    const listFetch = global.fetch;
+    global.fetch = vi.fn(async (url, options) => (url === "/api/ai-search"
+      ? { ok: true, json: async () => ({ status: "CLARIFICATION", question: "Which make did you mean?" }) }
+      : listFetch(url, options)));
+    render(<App />);
+    await screen.findByRole("heading", { name: "300 vehicles" });
+    await user.type(screen.getByRole("searchbox", { name: /search by vehicle/i }), "a fast car");
+    await user.click(screen.getByRole("button", { name: "Ask AI" }));
+    await screen.findByText("Which make did you mean?");
 
     expect(screen.queryByRole("button", { name: "Yes" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /edit my search/ })).not.toBeInTheDocument();
     expect(screen.getByRole("searchbox", { name: "Answer the AI question" })).toBeInTheDocument();
   });
 
