@@ -1,1 +1,1 @@
-console.log("Fixture for StaticResourceCachingTest: a hashed build file.");
+console.log("Fixture for StaticResourceConfigTest: a hashed build file.");

@@ -10,9 +10,6 @@ spring:
     hibernate:
       ddl-auto: update
     open-in-view: false
-    properties:
-      hibernate:
-        format_sql: true
   h2:
     console:
       # Off by default so the database console is never exposed on the public deployment.
