@@ -10,6 +10,7 @@ const initialFilters = {
   condition: "",
   minYear: "",
   maxYear: "",
+  priceRange: "",
   sortBy: "saleDate",
   direction: "asc",
   size: "10",
@@ -110,7 +111,7 @@ export default function App() {
       [name]: value,
       ...(name === "make" && value !== filters.make ? { model: "" } : {}),
     };
-    const searchableFields = ["q", "make", "model", "condition", "minYear", "maxYear"];
+    const searchableFields = ["q", "make", "model", "condition", "minYear", "maxYear", "priceRange"];
     const hasSearchFilters = searchableFields.some((field) => nextFilters[field].trim() !== "");
     const hadSubmittedSearch = searchableFields.some((field) => {
       const value = criteria[field];
@@ -144,10 +145,16 @@ export default function App() {
     }
 
     setValidationError("");
+    const [minPrice, maxPrice] = filters.priceRange
+      ? filters.priceRange.split("-").map(Number)
+      : [undefined, undefined];
+
     setCriteria({
       ...filters,
       minYear: minYear || undefined,
       maxYear: maxYear || undefined,
+      minPrice,
+      maxPrice,
       page: 0,
       size: Number(filters.size),
     });

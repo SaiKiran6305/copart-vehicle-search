@@ -3,6 +3,8 @@ package com.copart.vehiclesearch.vehicle;
 import org.springframework.data.jpa.domain.Specification;
 
 import jakarta.persistence.criteria.Predicate;
+
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -13,7 +15,8 @@ public final class VehicleSearchSpecification {
     }
 
     public static Specification<Vehicle> matches(String query, String make, String model,
-                                                 String condition, Integer minYear, Integer maxYear) {
+                                                 String condition, Integer minYear, Integer maxYear,
+                                                 BigDecimal minPrice, BigDecimal maxPrice) {
         return (root, unusedQuery, criteriaBuilder) -> {
             List<Predicate> predicates = new ArrayList<>();
 
@@ -42,6 +45,12 @@ public final class VehicleSearchSpecification {
             }
             if (maxYear != null) {
                 predicates.add(criteriaBuilder.lessThanOrEqualTo(root.get("year"), maxYear));
+            }
+            if (minPrice != null) {
+                predicates.add(criteriaBuilder.greaterThanOrEqualTo(root.get("estimatedValue"), minPrice));
+            }
+            if (maxPrice != null) {
+                predicates.add(criteriaBuilder.lessThan(root.get("estimatedValue"), maxPrice));
             }
 
             return criteriaBuilder.and(predicates.toArray(Predicate[]::new));

@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.math.BigDecimal;
 import java.util.Set;
 
 @RestController
@@ -32,6 +33,8 @@ public class VehicleController {
             @RequestParam(required = false) String condition,
             @RequestParam(required = false) Integer minYear,
             @RequestParam(required = false) Integer maxYear,
+            @RequestParam(required = false) BigDecimal minPrice,
+            @RequestParam(required = false) BigDecimal maxPrice,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
             @RequestParam(defaultValue = "saleDate") String sortBy,
@@ -41,6 +44,11 @@ public class VehicleController {
             return ResponseEntity.badRequest().build();
         }
         if (minYear != null && maxYear != null && minYear > maxYear) {
+            return ResponseEntity.badRequest().build();
+        }
+        if ((minPrice != null && minPrice.signum() < 0)
+                || (maxPrice != null && maxPrice.signum() < 0)
+                || (minPrice != null && maxPrice != null && minPrice.compareTo(maxPrice) >= 0)) {
             return ResponseEntity.badRequest().build();
         }
 
@@ -54,6 +62,6 @@ public class VehicleController {
         Pageable pageable = PageRequest.of(page, size, Sort.by(sortDirection, sortBy));
 
         return ResponseEntity.ok(VehicleSearchResponse.from(vehicleService.search(
-                q, make, model, condition, minYear, maxYear, pageable)));
+                q, make, model, condition, minYear, maxYear, minPrice, maxPrice, pageable)));
     }
 }

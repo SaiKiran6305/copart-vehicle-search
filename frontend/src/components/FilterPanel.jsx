@@ -62,6 +62,18 @@ export default function FilterPanel({ filters, onChange }) {
         </select>
       </label>
 
+      <label className="form-control" htmlFor="priceRange">
+        <span>Estimated value</span>
+        <select id="priceRange" name="priceRange" value={filters.priceRange} onChange={onChange}>
+          <option value="">Any value</option>
+          <option value="0-10000">$0–$10,000</option>
+          <option value="10000-20000">$10,000–$20,000</option>
+          <option value="20000-30000">$20,000–$30,000</option>
+          <option value="30000-40000">$30,000–$40,000</option>
+          <option value="40000-50000">$40,000–$50,000</option>
+        </select>
+      </label>
+
       <fieldset className="year-filter">
         <legend>Year range</legend>
         <label className="sr-only" htmlFor="minYear">
