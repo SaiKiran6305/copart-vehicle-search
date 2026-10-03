@@ -97,6 +97,12 @@ describe("vehicle search interactions", () => {
     await screen.findByRole("heading", { name: "300 vehicles" });
 
     await user.selectOptions(screen.getByLabelText("Make"), "Toyota");
+    await waitFor(() => {
+      expect(global.fetch).toHaveBeenLastCalledWith(
+        expect.stringContaining("make=Toyota"),
+        expect.any(Object),
+      );
+    });
     const model = screen.getByLabelText("Model");
     expect(model).toBeEnabled();
     await user.selectOptions(model, "Camry");
@@ -154,13 +160,12 @@ describe("vehicle search interactions", () => {
     expect(await screen.findByRole("heading", { name: "300 vehicles" })).toBeInTheDocument();
   });
 
-  it("sends the selected estimated value range to the search API", async () => {
+  it("applies the selected estimated value range without pressing Search", async () => {
     const user = userEvent.setup();
     render(<App />);
     await screen.findByRole("heading", { name: "300 vehicles" });
 
     await user.selectOptions(screen.getByLabelText("Estimated value"), "10000-20000");
-    await user.click(screen.getByRole("button", { name: "Search vehicles" }));
 
     await waitFor(() => {
       const requestUrl = new URL(global.fetch.mock.calls.at(-1)[0], window.location.origin);
