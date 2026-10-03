@@ -33,8 +33,8 @@ class VehicleControllerTest {
         mockMvc.perform(get("/api/vehicles"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.content.length()").value(12))
-                .andExpect(jsonPath("$.totalElements").value(300))
-                .andExpect(jsonPath("$.totalPages").value(25))
+                .andExpect(jsonPath("$.totalElements").value(1000))
+                .andExpect(jsonPath("$.totalPages").value(84))
                 .andExpect(jsonPath("$.number").value(0))
                 .andExpect(jsonPath("$.size").value(12))
                 .andExpect(jsonPath("$.first").value(true))
@@ -46,25 +46,25 @@ class VehicleControllerTest {
         // Make + city, and year + model: each word may match a different field.
         mockMvc.perform(get("/api/vehicles").param("q", "toyota dallas"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.totalElements").value(2))
+                .andExpect(jsonPath("$.totalElements").value(6))
                 .andExpect(jsonPath("$.content[*].make", everyItem(is("Toyota"))))
                 .andExpect(jsonPath("$.content[*].location", everyItem(is("Dallas, TX"))));
 
         mockMvc.perform(get("/api/vehicles").param("q", "2018 camry"))
-                .andExpect(jsonPath("$.totalElements").value(3))
+                .andExpect(jsonPath("$.totalElements").value(5))
                 .andExpect(jsonPath("$.content[*].year", everyItem(is(2018))))
                 .andExpect(jsonPath("$.content[*].model", everyItem(is("Camry"))));
 
         // Filler words are ignored.
         mockMvc.perform(get("/api/vehicles").param("q", "Toyota in Dallas"))
-                .andExpect(jsonPath("$.totalElements").value(2));
+                .andExpect(jsonPath("$.totalElements").value(6));
     }
 
     @Test
     void doesNotMatchShortNumbersAgainstLotNumbers() throws Exception {
         // The "3" in "model 3" must not pull in every lot number containing a 3.
         mockMvc.perform(get("/api/vehicles").param("q", "model 3").param("size", "100"))
-                .andExpect(jsonPath("$.totalElements").value(10))
+                .andExpect(jsonPath("$.totalElements").value(34))
                 .andExpect(jsonPath("$.content[*].model", everyItem(is("Model 3"))));
 
         mockMvc.perform(get("/api/vehicles").param("q", "LOT-1123"))
@@ -77,8 +77,8 @@ class VehicleControllerTest {
         mockMvc.perform(get("/api/vehicles")
                         .param("q", "tOyOtA"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.totalElements").value(30))
-                .andExpect(jsonPath("$.content[0].lotNumber").value("LOT-1004"));
+                .andExpect(jsonPath("$.totalElements").value(100))
+                .andExpect(jsonPath("$.content[0].lotNumber").value("LOT-1007"));
     }
 
     @Test
@@ -87,8 +87,8 @@ class VehicleControllerTest {
                         .param("make", "Toyota")
                         .param("condition", "Run and Drive"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.totalElements").value(6))
-                .andExpect(jsonPath("$.content[0].lotNumber").value("LOT-1065"));
+                .andExpect(jsonPath("$.totalElements").value(44))
+                .andExpect(jsonPath("$.content[0].lotNumber").value("LOT-1007"));
     }
 
     @Test
@@ -97,15 +97,15 @@ class VehicleControllerTest {
                         .param("primaryDamage", "water/FLOOD")
                         .param("size", "100"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.totalElements").value(23))
-                .andExpect(jsonPath("$.content[0].lotNumber").value("LOT-1019"))
+                .andExpect(jsonPath("$.totalElements").value(71))
+                .andExpect(jsonPath("$.content[0].lotNumber").value("LOT-1009"))
                 .andExpect(jsonPath("$.content[0].primaryDamage").value("Water/Flood"));
 
         mockMvc.perform(get("/api/vehicles")
                         .param("primaryDamage", "Water/Flood")
                         .param("condition", "Stationary"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.totalElements").value(17))
+                .andExpect(jsonPath("$.totalElements").value(54))
                 .andExpect(jsonPath("$.content[0].condition").value("Stationary"));
     }
 
@@ -118,10 +118,15 @@ class VehicleControllerTest {
                         .param("direction", "asc")
                         .param("size", "100"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.totalElements").value(59))
-                .andExpect(jsonPath("$.content[0].year").value(2020))
-                .andExpect(jsonPath("$.content[29].year").value(2020))
-                .andExpect(jsonPath("$.content[30].year").value(2021));
+                .andExpect(jsonPath("$.totalElements").value(208))
+                .andExpect(jsonPath("$.content[*].year", everyItem(is(2020))));
+
+        mockMvc.perform(get("/api/vehicles")
+                        .param("minYear", "2020")
+                        .param("maxYear", "2021")
+                        .param("sortBy", "year")
+                        .param("direction", "desc"))
+                .andExpect(jsonPath("$.content[*].year", everyItem(is(2021))));
     }
 
     @Test
@@ -131,8 +136,8 @@ class VehicleControllerTest {
                         .param("maxPrice", "20000")
                         .param("size", "100"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.totalElements").value(129))
-                .andExpect(jsonPath("$.content[0].estimatedValue").value(10900));
+                .andExpect(jsonPath("$.totalElements").value(422))
+                .andExpect(jsonPath("$.content[0].estimatedValue").value(13200));
     }
 
     @Test
@@ -141,10 +146,10 @@ class VehicleControllerTest {
                         .param("maxPriceInclusive", "10000")
                         .param("size", "100"))
                 .andExpect(status().isOk())
-                // LOT-1010 and LOT-1092 are valued at exactly $10,000: 121 lots are below it, 123 at or below.
-                .andExpect(jsonPath("$.totalElements").value(123));
+                // LOT-1385, LOT-1547 and LOT-1843 are valued at exactly $10,000: 424 lots are below it, 427 at or below.
+                .andExpect(jsonPath("$.totalElements").value(427));
         mockMvc.perform(get("/api/vehicles").param("maxPrice", "10000"))
-                .andExpect(jsonPath("$.totalElements").value(121));
+                .andExpect(jsonPath("$.totalElements").value(424));
     }
 
     @Test

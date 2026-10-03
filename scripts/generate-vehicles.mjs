@@ -1,11 +1,12 @@
-// Generates backend/src/main/resources/vehicles.json: 300 synthetic auction lots.
+// Generates backend/src/main/resources/vehicles.json: 1,000 synthetic auction lots.
 // Deterministic (fixed seed), so re-running it produces the same file.
 // Usage: node scripts/generate-vehicles.mjs
 import { writeFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 
 const SEED = 20261003;
-const VEHICLES_PER_MODEL = 10;
+// 100 lots per make (1,000 in total), split as evenly as possible across its three models.
+const LOTS_PER_MAKE = 100;
 const REFERENCE_YEAR = 2026;
 const FIRST_SALE_DATE = "2026-10-07";
 const SALE_WEEKS = 10;
@@ -104,8 +105,10 @@ const dates = saleDates();
 const vehicles = [];
 
 for (const [make, models] of Object.entries(MODELS)) {
-  for (const [model, newPrice] of Object.entries(models)) {
-    for (let i = 0; i < VEHICLES_PER_MODEL; i += 1) {
+  const modelCount = Object.keys(models).length;
+  for (const [modelIndex, [model, newPrice]] of Object.entries(models).entries()) {
+    const lots = Math.floor(LOTS_PER_MAKE / modelCount) + (modelIndex < LOTS_PER_MAKE % modelCount ? 1 : 0);
+    for (let i = 0; i < lots; i += 1) {
       const year = integerBetween(2016, 2025);
       const age = Math.max(1, REFERENCE_YEAR - year);
       const odometer = Math.max(800, Math.round(age * between(8000, 15000) + between(-3000, 3000)));

@@ -1,59 +1,72 @@
-// One illustrative photo per body style. File names describe what each picture shows.
-const images = {
-  blueSedan: "/vehicles/blue-sedan.webp",
-  blackSedan: "/vehicles/black-sedan.webp",
-  hatchback: "/vehicles/red-hatchback.webp",
-  compactSuv: "/vehicles/silver-suv.webp",
-  crossover: "/vehicles/blue-crossover.webp",
-  midsizeSuv: "/vehicles/green-suv.webp",
-  electricCrossover: "/vehicles/white-electric-crossover.webp",
-  pickup: "/vehicles/white-pickup.webp",
-  coupe: "/vehicles/orange-coupe.webp",
+// Illustrative photos, grouped by body style. File names describe what each picture shows.
+// The color variants were made from the original photos by recoloring only the paint, and the
+// "facing-left" ones are mirrored copies, so neighbouring cards don't all show the same picture.
+export const photosByStyle = {
+  sedan: [
+    "black-sedan", "blue-sedan", "red-sedan", "silver-sedan", "green-sedan", "black-sedan-facing-left",
+  ],
+  hatchback: ["red-hatchback", "blue-hatchback", "silver-hatchback", "yellow-hatchback"],
+  suv: [
+    "silver-suv", "blue-crossover", "green-suv", "red-crossover", "gray-crossover",
+    "silver-suv-facing-left", "green-suv-facing-left",
+  ],
+  electricCrossover: ["white-electric-crossover", "white-electric-crossover-facing-left"],
+  pickup: ["white-pickup", "white-pickup-facing-left"],
+  coupe: ["orange-coupe", "red-coupe", "blue-coupe", "gray-coupe"],
 };
 
 // Keyed by model, not make: one make sells sedans, SUVs and trucks.
-export const imageByModel = {
+export const bodyStyleByModel = {
   // Sedans
-  Camry: images.blueSedan,
-  Altima: images.blueSedan,
-  Elantra: images.blueSedan,
-  Forte: images.blueSedan,
-  "Model 3": images.blueSedan,
-  Accord: images.blackSedan,
-  Malibu: images.blackSedan,
-  Sentra: images.blackSedan,
-  "3 Series": images.blackSedan,
-  "5 Series": images.blackSedan,
-  "Model S": images.blackSedan,
+  Camry: "sedan",
+  Altima: "sedan",
+  Elantra: "sedan",
+  Forte: "sedan",
+  "Model 3": "sedan",
+  Accord: "sedan",
+  Malibu: "sedan",
+  Sentra: "sedan",
+  "3 Series": "sedan",
+  "5 Series": "sedan",
+  "Model S": "sedan",
   // Hatchbacks
-  Corolla: images.hatchback,
-  Civic: images.hatchback,
-  // Compact SUVs and crossovers
-  RAV4: images.compactSuv,
-  Escape: images.compactSuv,
-  Tucson: images.compactSuv,
-  Sportage: images.compactSuv,
-  "CR-V": images.crossover,
-  Equinox: images.crossover,
-  Rogue: images.crossover,
-  Compass: images.crossover,
-  X3: images.crossover,
-  // Mid-size SUVs
-  "Santa Fe": images.midsizeSuv,
-  Sorento: images.midsizeSuv,
-  Cherokee: images.midsizeSuv,
-  Wrangler: images.midsizeSuv,
+  Corolla: "hatchback",
+  Civic: "hatchback",
+  // SUVs and crossovers
+  RAV4: "suv",
+  Escape: "suv",
+  Tucson: "suv",
+  Sportage: "suv",
+  "CR-V": "suv",
+  Equinox: "suv",
+  Rogue: "suv",
+  Compass: "suv",
+  X3: "suv",
+  "Santa Fe": "suv",
+  Sorento: "suv",
+  Cherokee: "suv",
+  Wrangler: "suv",
   // Electric crossover
-  "Model Y": images.electricCrossover,
+  "Model Y": "electricCrossover",
   // Pickups
-  "F-150": images.pickup,
-  Silverado: images.pickup,
+  "F-150": "pickup",
+  Silverado: "pickup",
   // Coupes
-  Mustang: images.coupe,
+  Mustang: "coupe",
 };
 
-export const defaultVehicleImage = images.blackSedan;
+const photoUrl = (name) => `/vehicles/${name}.webp`;
 
+export const defaultVehicleImage = photoUrl("black-sedan");
+
+// A vehicle always gets the same photo of its body style, chosen from its lot number.
+// Consecutive lot numbers get consecutive photos, so a page of results shows a mix.
 export function getVehicleImage(vehicle) {
-  return imageByModel[vehicle?.model] ?? defaultVehicleImage;
+  const photos = photosByStyle[bodyStyleByModel[vehicle?.model]];
+  if (!photos) return defaultVehicleImage;
+  let hash = 0;
+  for (const character of String(vehicle.lotNumber ?? "")) {
+    hash = (hash * 31 + character.charCodeAt(0)) >>> 0;
+  }
+  return photoUrl(photos[hash % photos.length]);
 }

@@ -53,7 +53,7 @@ flowchart TB
 | --- | --- | --- |
 | React UI with a Spring Boot REST backend | React handles interactive filters, results, and shared search state. Spring provides a Java API with clear controller, service, repository, and entity boundaries. | The client and backend are separate codebases, although they ship together. |
 | JPA Specifications for vehicle search | Optional search criteria are composed into database predicates, so filtering, sorting, and pagination happen in the database rather than loading every record into application memory. | Substring keyword search is simple `LIKE` matching, not fuzzy or relevance-ranked search. |
-| H2 and a deterministic seed dataset | H2 keeps the take-home easy to run without provisioning a database. A fixed-seed generator makes the 300 records reproducible. | H2 is suitable for this prototype, not a durable production inventory database. The repository does not configure a persistent Railway volume. |
+| H2 and a deterministic seed dataset | H2 keeps the take-home easy to run without provisioning a database. A fixed-seed generator makes the 1,000 records reproducible. | H2 is suitable for this prototype, not a durable production inventory database. The repository does not configure a persistent Railway volume. |
 | One Docker deployment | The Dockerfile builds React, copies its static files into Spring Boot's resources, and packages one runnable application. This keeps browser requests same-origin and avoids a separate frontend service or CORS setup. | UI and API are deployed and scaled together. |
 | AI as an optional query interpreter | AI maps a natural-language request to a strict filter schema; the normal vehicle API still performs the actual search. The backend validates interpreted values against the project's supported catalog. | It requires a server-side API key, sends the submitted query to OpenAI, adds latency, and has usage limits. It is not required for ordinary keyword search. |
 | Applied search state in the URL | Search links can be shared and refreshed, and browser history restores earlier applied filters. | Only applied criteria are serialized; unsent edits in the form are not. |
@@ -118,7 +118,7 @@ Ask AI calls OpenAI's `gpt-5.6-luna` model by default, which is what the live de
 
 ## Data and database
 
-The seed file is `backend/src/main/resources/vehicles.json`. It contains 300 fictional lots: 10 makes, 3 models per make, and 10 lots per model. The records include locations, sale dates, years, damage, condition, odometer, and estimated value. Values and sale details are generated data, not current market valuations or auction listings.
+The seed file is `backend/src/main/resources/vehicles.json`. It contains 1,000 fictional lots: 10 makes with 3 models each, and 100 lots per make (33 or 34 per model), spread across 15 cities. At this size almost every combination of two filters, such as a model and a damage type, returns vehicles. The records include locations, sale dates, years, damage, condition, odometer, and estimated value. Values and sale details are generated data, not current market valuations or auction listings.
 
 Generate the seed file with:
 
@@ -126,7 +126,7 @@ Generate the seed file with:
 node scripts/generate-vehicles.mjs
 ```
 
-The generator uses a fixed random seed, so running it again produces the same dataset. Images are bundled WebP assets selected by vehicle model; they are illustrative and are not lot-specific photographs.
+The generator uses a fixed random seed, so running it again produces the same dataset. Photos are bundled WebP images grouped by body style (sedan, hatchback, SUV, electric crossover, pickup, coupe). Each style has several colors or angles, made from the original photos by recoloring only the paint or by mirroring, and each lot always shows the same one, chosen from its lot number. They are illustrative, not photos of the actual lot.
 
 The application defaults to the file-based H2 URL `jdbc:h2:file:./data/copartdb`. When started from the `backend` directory, the database files are under `backend/data`. Hibernate updates the local schema. At startup, the seed loader compares stored rows with the bundled seed file; if they differ, it replaces the stored rows with the seed data.
 
