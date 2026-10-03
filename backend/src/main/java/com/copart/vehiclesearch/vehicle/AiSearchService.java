@@ -18,6 +18,7 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.net.http.HttpTimeoutException;
 import java.time.Duration;
 import java.util.HashMap;
 import java.util.Locale;
@@ -121,7 +122,13 @@ public class AiSearchService {
         this.mapper = mapper;
         this.apiKey = apiKey == null ? "" : apiKey.trim();
         this.model = model;
-        this.client = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(5)).build();
+        // HTTP/1.1 because the JDK closes idle HTTP/1.1 connections after jdk.httpclient.keepalive.timeout
+        // (set in CopartVehicleSearchApplication). On Java 17 an idle HTTP/2 connection is kept forever,
+        // and after the network dropped it, every AI search reused the dead connection and timed out.
+        this.client = HttpClient.newBuilder()
+                .version(HttpClient.Version.HTTP_1_1)
+                .connectTimeout(Duration.ofSeconds(5))
+                .build();
     }
 
     public AiSearchResponse interpret(AiSearchRequest request) {
@@ -142,7 +149,8 @@ public class AiSearchService {
             payload.set("text", responseFormat());
 
             HttpRequest httpRequest = HttpRequest.newBuilder(URI.create("https://api.openai.com/v1/responses"))
-                    .timeout(Duration.ofSeconds(20))
+                    // Answers normally take 2-4 seconds; don't keep the visitor waiting much longer.
+                    .timeout(Duration.ofSeconds(15))
                     .header("Authorization", "Bearer " + apiKey)
                     .header("Content-Type", "application/json")
                     .POST(HttpRequest.BodyPublishers.ofString(mapper.writeValueAsString(payload)))
@@ -165,6 +173,9 @@ public class AiSearchService {
         } catch (InterruptedException exception) {
             Thread.currentThread().interrupt();
             throw new ResponseStatusException(HttpStatus.BAD_GATEWAY, "AI search was interrupted");
+        } catch (HttpTimeoutException exception) {
+            log.warn("AI search failed: {}", exception.toString());
+            throw new ResponseStatusException(HttpStatus.BAD_GATEWAY, "AI search took too long to answer");
         } catch (Exception exception) {
             log.warn("AI search failed: {}", exception.toString());
             throw new ResponseStatusException(HttpStatus.BAD_GATEWAY, "AI search could not interpret that request");
