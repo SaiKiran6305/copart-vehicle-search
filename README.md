@@ -114,7 +114,7 @@ The response is either:
 - `READY`, with supported filters such as make, model, primary damage, condition, year bounds, maximum price, and any remaining keyword in `q`; or
 - `CLARIFICATION`, with a short question when the request cannot be mapped safely to the available catalog.
 
-Ask AI calls OpenAI's `gpt-5.6-luna` model by default, which is what the live demo uses; set `OPENAI_MODEL` to use a different one. Each request asks for at most 300 output tokens and sets `store: false`, so OpenAI doesn't keep the response for later retrieval. AI output uses a strict JSON schema and is checked against supported makes, models, damage types, conditions, year limits, and price limits before it is returned. The user query is sent from the backend to the OpenAI Responses API; the API key is never placed in frontend code. A blank `query`, or a `query` or `clarification` longer than 300 characters, returns HTTP 400. Without a configured key, this endpoint returns HTTP 503. Rate limits return HTTP 429 with a `Retry-After` header; an upstream AI failure returns HTTP 502.
+Ask AI calls OpenAI's `gpt-5.6-luna` model by default, which is what the live demo uses; set `OPENAI_MODEL` to use a different one. Each request asks for at most 300 output tokens and sets `store: false`, so OpenAI doesn't keep the response for later retrieval. The instructions list the supported makes, models, damage types, conditions, and cities, and tell the model to correct obvious misspellings (for example "Toyta" → Toyota, "Dalls" → Dallas). When a word could mean two values or matches none, it asks a short question instead; a "Did you mean …?" question can be answered with one click on **Yes**. AI output uses a strict JSON schema and is checked against supported makes, models, damage types, conditions, year limits, and price limits before it is returned. The user query is sent from the backend to the OpenAI Responses API; the API key is never placed in frontend code. A blank `query`, or a `query` or `clarification` longer than 300 characters, returns HTTP 400. Without a configured key, this endpoint returns HTTP 503. Rate limits return HTTP 429 with a `Retry-After` header; an upstream AI failure returns HTTP 502.
 
 ## Data and database
 
@@ -212,6 +212,6 @@ The Railway service uses the repository-root Dockerfile and serves the frontend 
 - Synthetic seed data and illustrative images; no live Copart inventory or lot-specific photos.
 - No authentication, authorization, user accounts, or saved-vehicle synchronization across devices.
 - H2 is used by the application; production-grade database persistence and schema migrations are not configured in this repository.
-- Keyword matching is case-insensitive, word-by-word substring matching, not fuzzy, typo-tolerant, or relevance-ranked search.
+- Keyword matching is case-insensitive, word-by-word substring matching, not fuzzy, typo-tolerant, or relevance-ranked search. Ask AI corrects obvious misspellings; regular Search does not.
 - AI interpretation depends on an external OpenAI API and configured credentials. It supplements the deterministic search API and is optional.
 - Rate limiting is in-memory and per running instance; use a shared limiter if multiple instances must enforce a single global quota.
