@@ -60,20 +60,6 @@ a:focus-visible {
   text-decoration: none;
 }
 
-.brand__mark {
-  width: 38px;
-  height: 38px;
-  display: grid;
-  place-items: center;
-  border-radius: 11px;
-  background: #ffd447;
-  color: var(--navy);
-  font-family: "Avenir Next", "Segoe UI", sans-serif;
-  font-size: 25px;
-  font-weight: 800;
-  transform: skew(-5deg);
-}
-
 .brand__text {
   display: grid;
   gap: 1px;
@@ -84,29 +70,6 @@ a:focus-visible {
   font-family: "Avenir Next", "Segoe UI", sans-serif;
   font-size: 15px;
   letter-spacing: 0.16em;
-}
-
-.brand__text small {
-  color: #aebbd0;
-  font-size: 9px;
-  font-weight: 700;
-  letter-spacing: 0.17em;
-}
-
-.header-tag {
-  display: inline-flex;
-  align-items: center;
-  gap: 9px;
-  color: #d9e1ed;
-  font-size: 13px;
-}
-
-.status-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: #78d9ac;
-  box-shadow: 0 0 0 4px rgb(120 217 172 / 14%);
 }
 
 .hero {
@@ -249,15 +212,6 @@ a:focus-visible {
   font-family: "Avenir Next", "Segoe UI", sans-serif;
   font-size: 21px;
   letter-spacing: -0.025em;
-}
-
-.synthetic-note {
-  padding: 7px 10px;
-  border-radius: 20px;
-  background: #f2f6ff;
-  color: #3662a6;
-  font-size: 11px;
-  font-weight: 600;
 }
 
 .search-field {
@@ -784,10 +738,6 @@ a:focus-visible {
     padding: 0 6%;
   }
 
-  .header-tag {
-    font-size: 11px;
-  }
-
   .hero {
     min-height: 240px;
     padding: 35px 6% 55px;
@@ -818,12 +768,6 @@ a:focus-visible {
 
   .search-panel h2 {
     font-size: 19px;
-  }
-
-  .synthetic-note {
-    max-width: 125px;
-    text-align: center;
-    font-size: 10px;
   }
 
   .search-field {
