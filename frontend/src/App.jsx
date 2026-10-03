@@ -241,7 +241,8 @@ export default function App() {
   };
 
   // A "Popular" chip starts a new search with only that chip's filters, keeping sort and page size.
-  const handleQuickSearch = (presetFilters) => {
+  // Clicking the chip that is already on turns it off again and shows all vehicles.
+  const handleQuickSearch = (presetFilters, isActive = false) => {
     aiRequestVersion.current += 1;
     setIsAiLoading(false);
     const nextFilters = {
@@ -249,7 +250,7 @@ export default function App() {
       sortBy: filters.sortBy,
       direction: filters.direction,
       size: filters.size,
-      ...presetFilters,
+      ...(isActive ? {} : presetFilters),
     };
     setFilters(nextFilters);
     setAiQuestion("");

@@ -59,6 +59,25 @@ describe("popular search chips", () => {
     expect(screen.getByRole("button", { name: label })).toHaveAttribute("aria-pressed", "true");
   });
 
+  it("turns off when the active chip is clicked again", async () => {
+    const user = userEvent.setup();
+    window.history.replaceState(null, "", "/?sortBy=year&direction=desc");
+    render(<App />);
+    await screen.findByRole("heading", { name: "1,000 vehicles" });
+
+    await user.click(screen.getByRole("button", { name: "Under $5,000" }));
+    await waitFor(() => expect(lastSearch().get("maxPrice")).toBe("5000"));
+    expect(screen.getByRole("button", { name: "Under $5,000" })).toHaveAttribute("aria-pressed", "true");
+
+    await user.click(screen.getByRole("button", { name: "Under $5,000" }));
+
+    await waitFor(() => expect(lastSearch().get("maxPrice")).toBeNull());
+    expect(lastSearch().get("sortBy")).toBe("year");
+    expect(screen.getByRole("button", { name: "Under $5,000" })).toHaveAttribute("aria-pressed", "false");
+    expect(screen.getByLabelText("Estimated value")).toHaveValue("");
+    expect(window.location.search).toBe("?sortBy=year&direction=desc");
+  });
+
   it("shows TX in the search box for Texas, so the search is clear", async () => {
     const user = userEvent.setup();
     render(<App />);
