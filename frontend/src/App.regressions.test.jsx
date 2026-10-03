@@ -15,7 +15,8 @@ function makePage(params, totalElements = 300) {
       year: 2020,
       make: "Toyota",
       model: "Camry",
-      condition: "Run & Drive",
+      primaryDamage: "Normal Wear",
+      condition: "Run and Drive",
       location: "Dallas, TX",
       saleDate: "2026-10-08",
       odometer: 25000,
@@ -81,9 +82,9 @@ describe("search state regressions", () => {
 
     await user.type(screen.getByRole("searchbox", { name: /search by vehicle/i }), "dallas");
     await user.type(screen.getByLabelText("Minimum year"), "2020");
-    await user.selectOptions(screen.getByLabelText("Condition"), "Hail");
+    await user.selectOptions(screen.getByLabelText("Primary damage"), "Hail");
 
-    await waitFor(() => expect(requestParams().get("condition")).toBe("Hail"));
+    await waitFor(() => expect(requestParams().get("primaryDamage")).toBe("Hail"));
     expect(requestParams().get("q")).toBe("dallas");
     expect(requestParams().get("minYear")).toBe("2020");
   });
@@ -165,7 +166,7 @@ describe("search state regressions", () => {
     const listFetch = global.fetch;
     global.fetch = vi.fn(async (url, options) => (url === "/api/ai-search"
       ? { ok: true, json: async () => ({ status: "READY", filters: {
-          q: null, make: "Toyota", model: null, condition: null,
+          q: null, make: "Toyota", model: null, primaryDamage: null, condition: null,
           minYear: null, maxYear: null, maxPriceInclusive: 20000,
         } }) }
       : listFetch(url, options)));
@@ -176,8 +177,8 @@ describe("search state regressions", () => {
     await user.click(screen.getByRole("button", { name: "Search with AI" }));
     await waitFor(() => expect(screen.getByLabelText("Make")).toHaveValue("Toyota"));
 
-    await user.selectOptions(screen.getByLabelText("Condition"), "Hail");
-    await waitFor(() => expect(requestParams().get("condition")).toBe("Hail"));
+    await user.selectOptions(screen.getByLabelText("Primary damage"), "Hail");
+    await waitFor(() => expect(requestParams().get("primaryDamage")).toBe("Hail"));
     expect(requestParams().get("make")).toBe("Toyota");
     expect(requestParams().get("maxPriceInclusive")).toBe("20000");
     expect(requestParams().get("minPrice")).toBeNull();
@@ -199,21 +200,25 @@ describe("search state regressions", () => {
       .toBeInTheDocument();
   });
 
-  it("searches $50,000+ with only a lower bound", async () => {
+  it("searches $30,000+ with only a lower bound", async () => {
     const user = userEvent.setup();
     render(<App />);
     await screen.findByRole("heading", { name: "300 vehicles" });
 
-    await user.selectOptions(screen.getByLabelText("Estimated value"), "50000-");
+    await user.selectOptions(screen.getByLabelText("Estimated value"), "30000-");
 
-    await waitFor(() => expect(requestParams().get("minPrice")).toBe("50000"));
+    await waitFor(() => expect(requestParams().get("minPrice")).toBe("30000"));
     expect(requestParams().get("maxPrice")).toBeNull();
   });
 
-  it("colour-codes the condition and shows the model's body style image", async () => {
+  it("shows primary damage and condition separately, with a labelled representative photo", async () => {
     render(<App />);
     const card = await screen.findByRole("article", { name: "2020 Toyota Camry" });
-    expect(card.querySelector(".condition-pill")).toHaveClass("condition-pill--good");
+    expect(card.querySelector(".damage-pill")).toHaveClass("damage-pill--good");
+    expect(card.querySelector(".damage-pill")).toHaveTextContent("Primary damage: Normal Wear");
+    expect(card).toHaveTextContent("ConditionRun and Drive");
+    expect(screen.getByRole("img", { name: "2020 Toyota Camry, representative photo" })).toBeInTheDocument();
+    expect(card).toHaveTextContent("Representative photo");
     expect(card.querySelector("img")).toHaveAttribute("src", "/vehicles/blue-sedan.webp");
     expect(card.querySelector("img")).toHaveAttribute("loading", "lazy");
   });

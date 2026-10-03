@@ -2,6 +2,7 @@ import VehicleCard from "./VehicleCard.jsx";
 import Pagination from "./Pagination.jsx";
 import LoadingState from "./LoadingState.jsx";
 import ErrorMessage from "./ErrorMessage.jsx";
+import FilterSuggestions from "./FilterSuggestions.jsx";
 import { sortOptions } from "../data/searchOptions.js";
 
 export default function VehicleResults({
@@ -11,6 +12,7 @@ export default function VehicleResults({
   onPageChange,
   onRetry,
   onReset,
+  onRemoveFilter,
   criteria,
   onSortChange,
   onPageSizeChange,
@@ -37,6 +39,9 @@ export default function VehicleResults({
         </span>
         <h2>No vehicles found</h2>
         <p>Try broadening your search or clearing one or more filters.</p>
+        {onRemoveFilter && (
+          <FilterSuggestions criteria={criteria} total={0} onRemoveFilter={onRemoveFilter} />
+        )}
         {onReset && (
           <button className="button button--secondary" type="button" onClick={onReset}>
             Reset search
@@ -104,6 +109,9 @@ export default function VehicleResults({
           />
         ))}
       </div>
+      {onRemoveFilter && (
+        <FilterSuggestions criteria={criteria} total={result.totalElements} onRemoveFilter={onRemoveFilter} />
+      )}
       <Pagination
         result={result}
         onPageChange={onPageChange}
