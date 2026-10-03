@@ -6,6 +6,8 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -26,13 +28,16 @@ public class AiSearchController {
     }
 
     @PostMapping
-    public ResponseEntity<AiSearchResponse> interpret(@Valid @RequestBody AiSearchRequest request,
-                                                      HttpServletRequest httpRequest) {
+    public ResponseEntity<?> interpret(@Valid @RequestBody AiSearchRequest request,
+                                       HttpServletRequest httpRequest) {
         long retryAfterSeconds = rateLimiter.tryAcquire(AiSearchRateLimiter.clientKey(httpRequest));
         if (retryAfterSeconds > 0) {
+            ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.TOO_MANY_REQUESTS,
+                    "Too many AI searches. Try again in " + retryAfterSeconds + " seconds.");
             return ResponseEntity.status(HttpStatus.TOO_MANY_REQUESTS)
                     .header(HttpHeaders.RETRY_AFTER, String.valueOf(retryAfterSeconds))
-                    .build();
+                    .contentType(MediaType.APPLICATION_PROBLEM_JSON)
+                    .body(problem);
         }
         return ResponseEntity.ok(service.interpret(request));
     }

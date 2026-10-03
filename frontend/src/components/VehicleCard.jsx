@@ -42,7 +42,7 @@ export default function VehicleCard({ vehicle, isFavorite, onFavoriteToggle }) {
           type="button"
           aria-label={isFavorite ? `Remove ${name} from saved vehicles` : `Save ${name}`}
           aria-pressed={isFavorite}
-          onClick={() => onFavoriteToggle(vehicle.id)}
+          onClick={() => onFavoriteToggle(vehicle.lotNumber)}
         >
           <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
             <path d="M20.8 4.6a5.4 5.4 0 0 0-7.6 0L12 5.8l-1.2-1.2a5.4 5.4 0 0 0-7.6 7.6l1.2 1.2L12 21l7.6-7.6 1.2-1.2a5.4 5.4 0 0 0 0-7.6Z" />

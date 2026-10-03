@@ -7,6 +7,10 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.web.servlet.MockMvc;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.everyItem;
+import static org.hamcrest.Matchers.is;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -35,6 +39,37 @@ class VehicleControllerTest {
                 .andExpect(jsonPath("$.size").value(12))
                 .andExpect(jsonPath("$.first").value(true))
                 .andExpect(jsonPath("$.last").value(false));
+    }
+
+    @Test
+    void matchesEveryWordOfAKeywordSearchAcrossFields() throws Exception {
+        // Make + city, and year + model: each word may match a different field.
+        mockMvc.perform(get("/api/vehicles").param("q", "toyota dallas"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.totalElements").value(2))
+                .andExpect(jsonPath("$.content[*].make", everyItem(is("Toyota"))))
+                .andExpect(jsonPath("$.content[*].location", everyItem(is("Dallas, TX"))));
+
+        mockMvc.perform(get("/api/vehicles").param("q", "2018 camry"))
+                .andExpect(jsonPath("$.totalElements").value(3))
+                .andExpect(jsonPath("$.content[*].year", everyItem(is(2018))))
+                .andExpect(jsonPath("$.content[*].model", everyItem(is("Camry"))));
+
+        // Filler words are ignored.
+        mockMvc.perform(get("/api/vehicles").param("q", "Toyota in Dallas"))
+                .andExpect(jsonPath("$.totalElements").value(2));
+    }
+
+    @Test
+    void doesNotMatchShortNumbersAgainstLotNumbers() throws Exception {
+        // The "3" in "model 3" must not pull in every lot number containing a 3.
+        mockMvc.perform(get("/api/vehicles").param("q", "model 3").param("size", "100"))
+                .andExpect(jsonPath("$.totalElements").value(10))
+                .andExpect(jsonPath("$.content[*].model", everyItem(is("Model 3"))));
+
+        mockMvc.perform(get("/api/vehicles").param("q", "LOT-1123"))
+                .andExpect(jsonPath("$.totalElements").value(1))
+                .andExpect(jsonPath("$.content[0].lotNumber").value("LOT-1123"));
     }
 
     @Test
@@ -158,6 +193,27 @@ class VehicleControllerTest {
                         .param("minYear", "2022")
                         .param("maxYear", "2019"))
                 .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void explainsInvalidRequestsInTheResponseBody() throws Exception {
+        mockMvc.perform(get("/api/vehicles").param("sortBy", "price"))
+                .andExpect(status().isBadRequest())
+                .andExpect(content().contentTypeCompatibleWith("application/problem+json"))
+                .andExpect(jsonPath("$.status").value(400))
+                .andExpect(jsonPath("$.detail", containsString("sortBy must be one of")));
+
+        mockMvc.perform(get("/api/vehicles").param("minYear", "2022").param("maxYear", "2019"))
+                .andExpect(jsonPath("$.detail").value("minYear must be less than or equal to maxYear."));
+
+        mockMvc.perform(get("/api/vehicles").param("size", "500"))
+                .andExpect(jsonPath("$.detail").value("size must be between 1 and 100."));
+
+        // Values of the wrong type get a problem detail too.
+        mockMvc.perform(get("/api/vehicles").param("minYear", "abc"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.status").value(400))
+                .andExpect(jsonPath("$.detail", containsString("minYear")));
     }
 
     @Test

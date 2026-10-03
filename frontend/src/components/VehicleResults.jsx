@@ -16,7 +16,7 @@ export default function VehicleResults({
   criteria,
   onSortChange,
   onPageSizeChange,
-  favoriteIds,
+  savedLotNumbers,
   onFavoriteToggle,
 }) {
   const hasResults = result.content.length > 0;
@@ -102,9 +102,9 @@ export default function VehicleResults({
       <div className="vehicle-grid">
         {result.content.map((vehicle) => (
           <VehicleCard
-            key={vehicle.id}
+            key={vehicle.lotNumber}
             vehicle={vehicle}
-            isFavorite={favoriteIds.includes(vehicle.id)}
+            isFavorite={savedLotNumbers.includes(vehicle.lotNumber)}
             onFavoriteToggle={onFavoriteToggle}
           />
         ))}
