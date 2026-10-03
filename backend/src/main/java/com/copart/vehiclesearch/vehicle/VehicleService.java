@@ -4,6 +4,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
+
 @Service
 public class VehicleService {
 
@@ -15,9 +17,11 @@ public class VehicleService {
 
     public Page<VehicleResponse> search(String query, String make, String model,
                                         String condition, Integer minYear, Integer maxYear,
+                                        BigDecimal minPrice, BigDecimal maxPrice,
                                         Pageable pageable) {
         return vehicleRepository.findAll(
-                        VehicleSearchSpecification.matches(query, make, model, condition, minYear, maxYear),
+                        VehicleSearchSpecification.matches(
+                                query, make, model, condition, minYear, maxYear, minPrice, maxPrice),
                         pageable)
                 .map(VehicleResponse::from);
     }

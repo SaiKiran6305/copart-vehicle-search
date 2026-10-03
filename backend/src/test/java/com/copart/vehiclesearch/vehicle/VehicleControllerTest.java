@@ -71,6 +71,28 @@ class VehicleControllerTest {
     }
 
     @Test
+    void filtersByEstimatedValueRange() throws Exception {
+        mockMvc.perform(get("/api/vehicles")
+                        .param("minPrice", "10000")
+                        .param("maxPrice", "20000")
+                        .param("size", "100"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.totalElements").value(86))
+                .andExpect(jsonPath("$.content[0].estimatedValue").value(11258));
+    }
+
+    @Test
+    void rejectsInvalidEstimatedValueRange() throws Exception {
+        mockMvc.perform(get("/api/vehicles").param("minPrice", "-1"))
+                .andExpect(status().isBadRequest());
+
+        mockMvc.perform(get("/api/vehicles")
+                        .param("minPrice", "20000")
+                        .param("maxPrice", "10000"))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
     void sortsByAllowedFields() throws Exception {
         mockMvc.perform(get("/api/vehicles")
                         .param("sortBy", "year")

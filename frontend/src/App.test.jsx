@@ -149,6 +149,21 @@ describe("vehicle search interactions", () => {
     expect(await screen.findByRole("heading", { name: "300 vehicles" })).toBeInTheDocument();
   });
 
+  it("sends the selected estimated value range to the search API", async () => {
+    const user = userEvent.setup();
+    render(<App />);
+    await screen.findByRole("heading", { name: "300 vehicles" });
+
+    await user.selectOptions(screen.getByLabelText("Estimated value"), "10000-20000");
+    await user.click(screen.getByRole("button", { name: "Search vehicles" }));
+
+    await waitFor(() => {
+      const requestUrl = new URL(global.fetch.mock.calls.at(-1)[0], window.location.origin);
+      expect(requestUrl.searchParams.get("minPrice")).toBe("10000");
+      expect(requestUrl.searchParams.get("maxPrice")).toBe("20000");
+    });
+  });
+
   it("keeps a saved vehicle after the app is rendered again", async () => {
     const user = userEvent.setup();
     const firstRender = render(<App />);

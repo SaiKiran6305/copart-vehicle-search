@@ -7,6 +7,8 @@ export async function searchVehicles(criteria, signal) {
     "condition",
     "minYear",
     "maxYear",
+    "minPrice",
+    "maxPrice",
     "page",
     "size",
     "sortBy",
