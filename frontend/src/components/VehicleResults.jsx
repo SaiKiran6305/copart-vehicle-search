@@ -5,6 +5,9 @@ import ErrorMessage from "./ErrorMessage.jsx";
 import FilterSuggestions from "./FilterSuggestions.jsx";
 import { sortOptions } from "../data/searchOptions.js";
 
+// The widest layout shows 4 cards per row; their photos are visible as soon as results appear.
+const firstRowSize = 4;
+
 export default function VehicleResults({
   result,
   isLoading,
@@ -100,10 +103,11 @@ export default function VehicleResults({
         </div>
       </div>
       <div className="vehicle-grid">
-        {result.content.map((vehicle) => (
+        {result.content.map((vehicle, index) => (
           <VehicleCard
             key={vehicle.lotNumber}
             vehicle={vehicle}
+            isAboveTheFold={index < firstRowSize}
             isFavorite={savedLotNumbers.includes(vehicle.lotNumber)}
             onFavoriteToggle={onFavoriteToggle}
           />

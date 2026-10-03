@@ -200,6 +200,13 @@ docker run --rm -p 8080:8080 -e PORT=8080 copart-vehicle-search
 
 The Railway service uses the repository-root Dockerfile and serves the frontend and API from one public URL. Configure `OPENAI_API_KEY` as a Railway service variable if AI interpretation is needed; ordinary vehicle search does not require it.
 
+### Page load
+
+- `npm run build` also writes Brotli and gzip copies of the text files (`frontend/scripts/compress-dist.mjs`); Spring sends the one the browser accepts. API responses are compressed by the server.
+- Caching (`StaticResourceConfig`): files in `/assets` have a content hash in their names and may be cached for a year; vehicle photos for a day; `index.html` is re-checked on every visit, so a new deploy shows up right away.
+- `index.html` starts the default first search while the app's code downloads; the app uses that response for its first search if the URL matches (`frontend/src/api/vehicles.js`).
+- Photos in the first row of results load right away with high priority; the rest load as they are scrolled near.
+
 ## Scope and limitations
 
 - Synthetic seed data and illustrative images; no live Copart inventory or lot-specific photos.

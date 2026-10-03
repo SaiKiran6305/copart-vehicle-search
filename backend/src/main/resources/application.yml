@@ -21,6 +21,11 @@ spring:
 
 server:
   port: ${PORT:8080}
+  # Compress API responses. The frontend's files are compressed at build time (see StaticResourceConfig).
+  compression:
+    enabled: true
+    mime-types: application/json,application/problem+json
+    min-response-size: 1KB
 
 openai:
   api-key: ${OPENAI_API_KEY:}
