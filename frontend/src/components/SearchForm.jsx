@@ -1,10 +1,22 @@
 import FilterPanel from "./FilterPanel.jsx";
 import SearchControls from "./SearchControls.jsx";
 
-// A "Did you mean Toyota Corolla?" question can be answered with one click. Questions offering a
-// choice ("…, or another Honda?") or asking for details still need a typed answer.
-export function isConfirmationQuestion(question) {
-  return /^\s*(did|do) you mean\b/i.test(question) && !/\bor\b/i.test(question);
+// One-click answers to the AI's "Did you mean …?" questions:
+//   "Did you mean Toyota Corolla?"                        -> ["Yes"]
+//   "Did you mean a Honda vehicle or a Toyota Corolla?"   -> ["Honda vehicle", "Toyota Corolla"]
+//   "…, Did you mean a Toyota Corolla, or another Honda?" -> ["Toyota Corolla", "Another Honda"]
+// Any other question (asking for details, or with more than three choices) returns [] and is
+// answered by typing.
+export function quickAnswers(question) {
+  const match = /(?:^|[.!?]\s+)(?:did|do) you mean\s+(.+?)\?\s*$/i.exec(question ?? "");
+  if (!match) return [];
+  const choices = match[1]
+    .split(/,\s+(?:or\s+)?|\s+or\s+/i)
+    .map((choice) => choice.trim().replace(/^(a|an|the)\s+/i, ""))
+    .filter(Boolean)
+    .map((choice) => choice.charAt(0).toUpperCase() + choice.slice(1));
+  if (choices.length === 1) return ["Yes"];
+  return choices.length <= 3 ? choices : [];
 }
 
 export default function SearchForm({
@@ -29,6 +41,8 @@ export default function SearchForm({
   onAiAnswer,
   onAiCancel,
 }) {
+  const answers = aiQuestion ? quickAnswers(aiQuestion) : [];
+
   return (
     <form className={`search-panel${filtersOpen ? " filters-open" : ""}`} onSubmit={onSubmit} noValidate>
       <SearchControls
@@ -45,18 +59,21 @@ export default function SearchForm({
         <div className="ai-followup" role="status">
           <p>{aiQuestion}</p>
           <span>Original request: “{aiOriginalQuery}”</span>
-          {isConfirmationQuestion(aiQuestion) && (
+          {answers.length > 0 && (
             <div className="ai-followup__actions">
-              <button
-                className="button button--primary"
-                type="button"
-                onClick={() => onAiAnswer("Yes")}
-                disabled={isAiLoading}
-              >
-                {isAiLoading ? "Searching…" : "Yes"}
-              </button>
+              {answers.map((answer) => (
+                <button
+                  key={answer}
+                  className="button button--primary"
+                  type="button"
+                  onClick={() => onAiAnswer(answer)}
+                  disabled={isAiLoading}
+                >
+                  {answer}
+                </button>
+              ))}
               <button className="button button--secondary" type="button" onClick={onAiCancel} disabled={isAiLoading}>
-                No, edit my search
+                {answers[0] === "Yes" ? "No, edit my search" : "Neither, edit my search"}
               </button>
             </div>
           )}
