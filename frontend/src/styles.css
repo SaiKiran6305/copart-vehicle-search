@@ -230,14 +230,21 @@ a:focus-visible {
 }
 
 .button--ai {
-  border-color: #b9cef7;
-  background: #edf4ff;
-  color: #174a9e;
+  border-color: #5536b2;
+  background: #6042c7;
+  color: #fff;
 }
 
 .button--ai:hover:not(:disabled) {
-  border-color: #8eafea;
-  background: #e1edff;
+  border-color: #452a9d;
+  background: #4f34ae;
+}
+
+.button--ai:disabled {
+  border-color: #7865bb;
+  background: #7865bb;
+  color: #fff;
+  opacity: 0.82;
 }
 
 .search-composer__filters {
