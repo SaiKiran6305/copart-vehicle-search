@@ -436,7 +436,6 @@ export default function App() {
           <a className="brand" href="/" aria-label="Copart Vehicle Search home">
             <img src="/copart-logo.svg" alt="Copart" />
           </a>
-          <span className="demo-badge">Demo · synthetic listings</span>
         </div>
         <div className="hero__content">
           <h1>Find your next vehicle</h1>
