@@ -1,8 +1,8 @@
-# Copart Vehicle Search
+# Vehicle Search
 
 A full-stack vehicle search prototype built for a Software Engineering Intern take-home assignment. It provides a responsive search UI, a paginated REST API, and optional AI-assisted interpretation of natural-language search requests.
 
-**Live demo:** [copart-vehicle-search.up.railway.app](https://copart-vehicle-search.up.railway.app/)
+**Live demo:** [vehicle-search-demo.up.railway.app](https://vehicle-search-demo.up.railway.app/)
 
 **Recorded demo:** https://drive.google.com/file/d/1yupOOoU6ybaCE3RYfxr6SXt2TS9aUlDd/view?usp=sharing
 
