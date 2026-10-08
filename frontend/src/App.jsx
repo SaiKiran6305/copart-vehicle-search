@@ -24,9 +24,7 @@ const emptyResult = {
 };
 
 // Saved vehicles are stored by lot number, which stays the same across deploys.
-// (Version 1 stored database ids, which can point to a different car after the data is reloaded.)
-const savedVehiclesKey = "copart:saved-lot-numbers:v2";
-const legacySavedVehiclesKey = "copart:saved-vehicle-ids:v1";
+const savedVehiclesKey = "vehicle-search:saved-lot-numbers";
 
 const searchableFields = ["q", "make", "model", "primaryDamage", "condition", "minYear", "maxYear", "priceRange"];
 
@@ -43,7 +41,6 @@ function scrollToElement(selector) {
 
 function readSavedLotNumbers() {
   try {
-    window.localStorage.removeItem(legacySavedVehiclesKey);
     const saved = JSON.parse(window.localStorage.getItem(savedVehiclesKey) || "[]");
     return Array.isArray(saved) ? saved.filter((lot) => typeof lot === "string") : [];
   } catch {
@@ -434,8 +431,9 @@ export default function App() {
     <div className="app-shell">
       <header className="hero">
         <div className="site-header">
-          <a className="brand" href="/" aria-label="Copart Vehicle Search home">
-            <img src="/copart-logo.svg" alt="Copart" />
+          <a className="brand" href="/" aria-label="Vehicle Search home">
+            <img src="/logo.svg" alt="" />
+            <span className="brand__name">Vehicle Search</span>
           </a>
         </div>
         <div className="hero__content">
@@ -519,7 +517,7 @@ export default function App() {
       </main>
 
       <footer className="site-footer">
-        <span>Copart Vehicle Search</span>
+        <span>Vehicle Search</span>
         <span>Sample auction data · For demonstration only</span>
       </footer>
     </div>

@@ -4,6 +4,7 @@ import userEvent from "@testing-library/user-event";
 import "@testing-library/jest-dom/vitest";
 import App from "./App.jsx";
 import { saleCountdown } from "./components/VehicleCard.jsx";
+import indexHtml from "../index.html?raw";
 
 const isoDate = (daysFromToday) => {
   const today = new Date();
@@ -94,7 +95,17 @@ describe("header", () => {
     render(<App />);
     const stats = await screen.findByRole("list", { name: "About the listings" });
     await waitFor(() => expect(within(stats).getByText("1,000")).toBeInTheDocument());
-    expect(screen.getByRole("banner")).toContainElement(screen.getByRole("link", { name: "Copart Vehicle Search home" }));
+    expect(screen.getByRole("banner")).toContainElement(screen.getByRole("link", { name: "Vehicle Search home" }));
+  });
+
+  it("does not use the Copart name or logo anywhere on the page", async () => {
+    render(<App />);
+    await screen.findByRole("heading", { name: "1,000 vehicles" });
+
+    // outerHTML includes text, image sources, alt text and labels.
+    expect(document.documentElement.outerHTML).not.toMatch(/copart/i);
+    expect(indexHtml).not.toMatch(/copart/i);
+    expect(screen.getByRole("link", { name: "Vehicle Search home" })).toHaveTextContent("Vehicle Search");
   });
 
   it("leaves the total out when the page opens on a filtered search", async () => {
