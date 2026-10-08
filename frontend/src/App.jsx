@@ -434,8 +434,8 @@ export default function App() {
     <div className="app-shell">
       <header className="hero">
         <div className="site-header">
-          <a className="brand" href="/" aria-label="Copart Vehicle Search home">
-            <img src="/copart-logo.svg" alt="Copart" />
+          <a className="brand" href="/" aria-label="LotScout Vehicle Search home">
+            <img src="/lotscout-mark.svg" alt="LotScout" />
           </a>
         </div>
         <div className="hero__content">
@@ -519,7 +519,7 @@ export default function App() {
       </main>
 
       <footer className="site-footer">
-        <span>Copart Vehicle Search</span>
+        <span>LotScout Vehicle Search</span>
         <span>Sample auction data · For demonstration only</span>
       </footer>
     </div>
