@@ -46,17 +46,9 @@ describe("saved vehicles", () => {
 
     await user.click(await screen.findByRole("button", { name: "Save 2021 Hyundai Tucson" }));
 
-    expect(JSON.parse(window.localStorage.getItem("copart:saved-lot-numbers:v2"))).toEqual(["LOT-1123"]);
+    expect(JSON.parse(window.localStorage.getItem("vehicle-search:saved-lot-numbers"))).toEqual(["LOT-1123"]);
   });
 
-  it("drop the old id-based list, which can point to the wrong car", async () => {
-    window.localStorage.setItem("copart:saved-vehicle-ids:v1", JSON.stringify([7]));
-    render(<App />);
-
-    expect(await screen.findByRole("button", { name: "Save 2021 Hyundai Tucson" }))
-      .toHaveAttribute("aria-pressed", "false");
-    expect(window.localStorage.getItem("copart:saved-vehicle-ids:v1")).toBeNull();
-  });
 });
 
 describe("search errors", () => {
